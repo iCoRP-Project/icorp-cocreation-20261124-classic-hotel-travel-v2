@@ -1,0 +1,2801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名門クラシックホテル 悠久の旅路プランナー</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for soft sound cues -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            classic: {
+              navy: '#1A2A3A',
+              burgundy: '#5B1E2B',
+              gold: '#C5A059',
+              goldHover: '#B08B42',
+              cream: '#FDFBF7',
+              sand: '#F4EFE6',
+              wood: '#3D2817',
+              border: '#E2D8C8'
+            }
+          },
+          fontFamily: {
+            serif: ['"Noto Serif JP"', '"Yu Mincho"', '"Hiragino Mincho ProN"', 'serif'],
+            sans: ['"Hiragino Sans"', '"Meiryo"', 'sans-serif']
+          },
+          // 文字サイズは rem ベース。html の font-size を変えると全体が拡大・縮小する。
+          // 標準（html=16px）でも本文が16px以上になるよう、小さめの段を底上げしている。
+          fontSize: {
+            xs:   ['0.875rem',  { lineHeight: '1.5' }],   // 14px（補足・ラベル）
+            sm:   ['1rem',      { lineHeight: '1.65' }],  // 16px（本文）
+            base: ['1.0625rem', { lineHeight: '1.7' }],   // 17px
+            lg:   ['1.1875rem', { lineHeight: '1.6' }],
+            xl:   ['1.3125rem', { lineHeight: '1.5' }],
+            '2xl': ['1.5rem',   { lineHeight: '1.4' }],
+            '3xl': ['1.875rem', { lineHeight: '1.3' }]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* 印刷時のレイアウト調整 */
+    @media print {
+      html, html.fs-large, html.fs-xlarge { font-size: 11pt !important; }
+      body { background-color: #ffffff !important; color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      header { position: static !important; box-shadow: none !important; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .shadow-md, .shadow-xl, .shadow-sm, .shadow { box-shadow: none !important; }
+      #plan-detail-section { grid-column: 1 / -1 !important; }
+      #plan-container { border: none !important; padding: 0 !important; }
+      .avoid-break { break-inside: avoid; }
+    }
+    .print-only { display: none; }
+    
+    /* スムーズなスクロールと基本スタイル */
+    html {
+      scroll-behavior: smooth;
+      font-size: 100%;
+    }
+    html.fs-large  { font-size: 112.5%; }
+    html.fs-xlarge { font-size: 125%; }
+    
+    /* カスタムラジオ風ボタンスタイル */
+    .option-card input:checked + div {
+      border-color: #C5A059;
+      background-color: #FAF4E8;
+      box-shadow: 0 4px 12px rgba(197, 160, 89, 0.25);
+    }
+    
+    .option-card input:checked + div .check-indicator {
+      border-color: #5B1E2B;
+      background-color: #5B1E2B;
+      color: white;
+    }
+
+    /* タイムラインの装飾 */
+    .timeline-line::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background-color: #C5A059;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body id="app-body" class="bg-[#F6F3EB] text-[#2C241E] font-sans antialiased min-h-screen flex flex-col text-base selection:bg-classic-gold selection:text-white">
+
+  <!-- ヘッダー（品格ある濃紺と金色） -->
+  <header class="bg-classic-navy text-white shadow-lg sticky top-0 z-40 border-b-2 border-classic-gold">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <!-- クラシックな建物を模したSVGロゴ -->
+        <div class="w-11 h-11 rounded-lg bg-classic-gold flex items-center justify-center text-classic-navy shadow-inner">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 2l7 8H5z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-serif tracking-wider font-bold text-[#FDFBF7]">
+            名門クラシックホテル <span class="text-classic-gold">悠久の旅路</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-gray-300 font-serif">
+            名建築と土地の味を、ゆっくり楽しむ旅の計画
+          </p>
+        </div>
+      </div>
+
+      <!-- 右側ツール：文字サイズ切り替え、音量、履歴比較ボタン -->
+      <div class="flex flex-wrap items-center gap-2 no-print">
+        <!-- 文字サイズ調整（画面共有や小さな画面でも読みやすく） -->
+        <div class="flex items-center bg-[#243547] rounded-lg p-1 border border-gray-600 text-sm whitespace-nowrap" role="group" aria-label="文字の大きさ">
+          <span class="text-xs text-gray-300 px-2 font-medium">文字</span>
+          <button onclick="setFontSize('normal')" id="btn-font-normal" class="px-2 py-1 rounded text-xs transition bg-classic-gold text-classic-navy font-bold">標準</button>
+          <button onclick="setFontSize('large')" id="btn-font-large" class="px-2 py-1 rounded text-xs transition hover:text-classic-gold text-gray-200">大</button>
+          <button onclick="setFontSize('xlarge')" id="btn-font-xlarge" class="px-2 py-1 rounded text-xs transition hover:text-classic-gold text-gray-200">特大</button>
+        </div>
+
+        <!-- 履歴・比較へのクイックジャンプ -->
+        <button onclick="scrollToHistory()" class="flex items-center space-x-1 whitespace-nowrap bg-classic-burgundy hover:bg-[#722736] text-white px-3 py-1.5 rounded-lg text-sm border border-[#9A4252] shadow transition">
+          <svg class="w-4 h-4 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <span>作ったプラン (<span id="header-history-count">0</span>)</span>
+        </button>
+
+        <!-- 効果音ON/OFF -->
+        <button onclick="toggleSound()" id="sound-btn" title="効果音の切り替え" aria-label="効果音の切り替え" class="p-2 rounded-lg bg-[#243547] text-gray-300 hover:text-white hover:bg-gray-700 transition">
+          <svg id="sound-icon-on" class="w-5 h-5 text-classic-gold hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"/>
+          </svg>
+          <svg id="sound-icon-off" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+            <path d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ領域 -->
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full">
+    
+    <!-- イントロダクション案内帯 -->
+    <div class="no-print bg-white rounded-xl p-5 mb-8 border border-classic-border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center space-x-2">
+          <span class="inline-block px-2.5 py-0.5 text-xs font-bold bg-classic-burgundy text-white rounded">クラシックホテル10館</span>
+          <span class="text-xs text-gray-600 font-serif">日光・箱根・軽井沢・奈良・横浜・東京・蒲郡・雲仙・川奈・伊勢志摩</span>
+        </div>
+        <h2 class="text-xl sm:text-2xl font-serif font-bold text-classic-navy">
+          歴史あるホテルで過ごす、ゆとりの旅を計画しましょう
+        </h2>
+        <p class="text-sm sm:text-base text-gray-700 leading-relaxed font-serif">
+          条件を選ぶと、旅程の「たたき台」ができます。予定を入れ替えたり、思い出や気づいたことを書き添えたりして、自分だけの旅に仕上げてください。<br class="hidden sm:inline">
+          条件を変えて何度でも作り直せます。作ったプランは下に並び、見比べて選べます。書き込んだ内容はこの端末に自動で保存され、ファイルに書き出して次回へ持ち越せます。
+        </p>
+      </div>
+      <div class="flex-shrink-0 self-end md:self-center">
+        <a href="#planner-form" class="inline-flex items-center px-4 py-2.5 bg-classic-navy text-white rounded-lg text-sm font-serif font-medium shadow hover:bg-[#25394e] transition">
+          <span>条件を選んで計画する</span>
+          <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- 2カラム構成：左側に条件入力フォーム、右側に生成プラン詳細（スマホでは縦積み） -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- 左側：条件選択フォーム（幅5カラム） -->
+      <div class="lg:col-span-5 space-y-6 no-print">
+
+
+      <section id="planner-form" class="bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
+        <div class="border-b border-classic-border pb-3 mb-5 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-6 bg-classic-burgundy rounded-sm"></span>
+            <h3 class="text-lg sm:text-xl font-serif font-bold text-classic-navy">
+              旅の条件をえらぶ
+            </h3>
+          </div>
+          <span class="text-xs text-gray-500 font-sans">タップ・クリックで選べます</span>
+        </div>
+
+        <form id="travel-form" onsubmit="handleGeneratePlan(event)" class="space-y-6">
+          
+          <!-- 1. クラシックホテルの選択 -->
+          <div>
+            <label class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">1</span>
+              泊まるホテル
+            </label>
+            <div class="relative">
+              <select id="hotelSelect" class="w-full p-3.5 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-base text-gray-800 font-medium focus:ring-2 focus:ring-classic-gold focus:border-classic-gold transition">
+                <option value="auto" selected>✨ おまかせ（楽しみに合うホテルを選ぶ）</option>
+                <optgroup label="── クラシックホテル10館 ──">
+                  <option value="nikko">日光金谷ホテル（栃木・明治6年創業 最古のリゾート）</option>
+                  <option value="fujiya">富士屋ホテル（箱根宮ノ下・明治11年創業 登録有形文化財）</option>
+                  <option value="mampei">万平ホテル（軽井沢・明治27年創業 避暑地の名門）</option>
+                  <option value="nara">奈良ホテル（奈良公園・明治42年創業 関西の迎賓館）</option>
+                  <option value="tokyo">東京ステーションホテル（東京駅・大正4年創業 重要文化財）</option>
+                  <option value="newgrand">ホテルニューグランド（横浜・昭和2年創業 山下公園前）</option>
+                  <option value="gamagori">蒲郡クラシックホテル（愛知・昭和9年創業 三河湾の絶景）</option>
+                  <option value="unzen">雲仙観光ホテル（長崎・昭和10年創業 スイス山小屋風）</option>
+                  <option value="kawana">川奈ホテル（静岡伊豆・昭和11年創業 海を望む名門）</option>
+                  <option value="shima">志摩観光ホテル（三重・昭和26年創業 英虞湾の絶景と夕陽）</option>
+                </optgroup>
+              </select>
+            </div>
+            <p class="text-xs text-gray-500 mt-1 pl-1">迷ったら「おまかせ」で。楽しみや季節に合わせて選びます。</p>
+          </div>
+
+          <!-- 2. 旅の目的 -->
+          <div>
+            <span class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">2</span>
+              いちばんの楽しみ
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="architecture" class="sr-only" checked>
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">🏛️ 建物と歴史</span>
+                    <span class="check-indicator w-5 h-5 border border-gray-300 rounded-full flex items-center justify-center text-xs">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">建物のつくりや、そこで起きた出来事を味わう</span>
+                </div>
+              </label>
+
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="gourmet" class="sr-only">
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">🍽️ 伝統の味</span>
+                    <span class="check-indicator w-5 h-5 border border-gray-300 rounded-full flex items-center justify-center text-xs">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">ホテルの名物料理や洋食、おやつを楽しむ</span>
+                </div>
+              </label>
+
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="nature" class="sr-only">
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">🌿 景色とのんびり</span>
+                    <span class="check-indicator w-5 h-5 border border-gray-300 rounded-full flex items-center justify-center text-xs">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">庭や海・山の景色を眺めて、ゆっくり休む</span>
+                </div>
+              </label>
+
+              <label class="option-card cursor-pointer">
+                <input type="radio" name="purpose" value="anniversary" class="sr-only">
+                <div class="p-3 border-2 border-gray-200 rounded-xl transition flex flex-col justify-between h-full bg-[#FAF9F5]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-base font-bold text-classic-navy">💐 お祝い・記念日</span>
+                    <span class="check-indicator w-5 h-5 border border-gray-300 rounded-full flex items-center justify-center text-xs">✓</span>
+                  </div>
+                  <span class="text-xs text-gray-600">誕生日や長寿のお祝い、家族の節目に</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 3. 季節と日数 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="seasonSelect" class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+                <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">3</span>
+                季節
+              </label>
+              <select id="seasonSelect" class="w-full p-3 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-sm font-medium text-gray-800 focus:ring-classic-gold">
+                <option value="spring">🌸 春（桜・新緑）</option>
+                <option value="summer">☀️ 夏（高原や海辺の涼しさ）</option>
+                <option value="autumn" selected>🍁 秋（紅葉・旬の味）</option>
+                <option value="winter">❄️ 冬（澄んだ空気・温泉）</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="nightsSelect" class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+                <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">4</span>
+                日数
+              </label>
+              <select id="nightsSelect" class="w-full p-3 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-sm font-medium text-gray-800 focus:ring-classic-gold">
+                <option value="1night" selected>一泊二日</option>
+                <option value="daytrip">日帰り（食事と館内見学）</option>
+                <option value="2nights">二泊三日（中日はのんびり）</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 5. いっしょに行く人 -->
+          <div>
+            <label for="companionSelect" class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">5</span>
+              いっしょに行く人
+            </label>
+            <select id="companionSelect" class="w-full p-3 bg-[#FAF7F0] border-2 border-[#D8CBB6] rounded-xl text-sm font-medium text-gray-800 focus:ring-classic-gold">
+              <option value="couple" selected>夫婦・パートナー</option>
+              <option value="solo">ひとり旅</option>
+              <option value="friends">友人・仲間</option>
+              <option value="parent">子どもと</option>
+              <option value="grand">孫と</option>
+              <option value="three">三世代そろって</option>
+              <option value="other">そのほか</option>
+            </select>
+          </div>
+
+          <!-- 6. 歩くペース -->
+          <div>
+            <span class="block text-sm sm:text-base font-bold text-classic-navy mb-2 flex items-center">
+              <span class="bg-classic-gold text-white text-xs px-2 py-0.5 rounded mr-2">6</span>
+              歩くペース
+            </span>
+            <div class="grid grid-cols-1 gap-2 text-sm">
+              <label class="flex items-start space-x-2 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F0]">
+                <input type="radio" name="pace" value="relaxed" class="accent-classic-burgundy mt-1.5 w-4 h-4" checked>
+                <span class="text-gray-800"><strong>ゆったり</strong>：遠出は1日1か所にしぼり、休憩をはさむ（足腰に配慮）</span>
+              </label>
+              <label class="flex items-start space-x-2 cursor-pointer p-2 rounded-lg hover:bg-[#FAF7F0]">
+                <input type="radio" name="pace" value="active" class="accent-classic-burgundy mt-1.5 w-4 h-4">
+                <span class="text-gray-800"><strong>しっかり巡る</strong>：近くの名所も多めに回る</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 生成ボタン -->
+          <div class="pt-2">
+            <button type="submit" id="generate-btn" class="w-full py-4 px-6 bg-classic-burgundy hover:bg-[#782435] active:bg-[#481420] text-white text-lg font-serif font-bold rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-[0.99] flex items-center justify-center space-x-2 border border-[#8B3042]">
+              <svg class="w-6 h-6 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+              </svg>
+              <span>この条件でたたき台をつくる</span>
+            </button>
+            <p class="text-center text-xs text-gray-500 mt-2 font-serif">
+              ホテルや季節を変えて、何度でも作り直せます。
+            </p>
+          </div>
+
+        </form>
+      </section>
+
+      <!-- 旅の仲間（なくても使える） -->
+      <section id="members-panel" class="bg-white p-5 sm:p-6 rounded-2xl border border-classic-border shadow-md">
+        <div class="border-b border-classic-border pb-3 mb-4 flex items-center space-x-2">
+          <span class="w-3 h-6 bg-classic-gold rounded-sm"></span>
+          <h3 class="text-lg sm:text-xl font-serif font-bold text-classic-navy">旅の仲間 <span class="text-sm font-normal text-gray-500">（なくても使えます）</span></h3>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">いっしょに行く人の名前を入れておくと、予定ごとに「だれの希望か」を残したり、見比べるときに一人ずつ行きたい度を付けたりできます。ひとり旅なら「わたし」だけで大丈夫です。ここで入れた名前は、すべてのプランで共通です。</p>
+        <div id="members-editor"><!-- JSで描画 --></div>
+      </section>
+      </div>
+
+      <!-- 右側：生成されたプランの詳細（幅7カラム） -->
+      <section id="plan-detail-section" class="lg:col-span-7 space-y-6">
+        
+        <!-- プラン未生成時の案内プレースホルダー（初期状態は最新プランを表示） -->
+        <div id="plan-container" class="bg-white rounded-2xl border border-classic-border shadow-md p-6 sm:p-8 relative overflow-hidden transition-all duration-300">
+          <!-- JSで動的に差し込まれます -->
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- 履歴＆比較セクション（重要要件） -->
+    <section id="history-section" class="no-print mt-12 pt-8 border-t-2 border-[#D8CBB6]">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-6 bg-classic-gold rounded-sm"></span>
+            <h3 class="text-xl sm:text-2xl font-serif font-bold text-classic-navy">
+              作ったプラン
+            </h3>
+          </div>
+          <p class="text-sm text-gray-600 mt-1">
+            作ったプランがここに並びます。2〜3件えらんで並べると、話し合いに使えます。
+          </p>
+          <p id="save-status" class="text-xs text-gray-500 mt-1" aria-live="polite">この端末（ブラウザ）に自動で保存されます。</p>
+        </div>
+
+        <!-- 比較操作ボタン -->
+        <div class="flex flex-wrap items-center gap-2 no-print">
+          <button onclick="compareSelectedPlans()" id="btn-compare" class="px-5 py-2.5 bg-classic-navy hover:bg-[#253d55] text-white rounded-xl text-sm font-serif font-bold shadow flex items-center space-x-2 border border-classic-gold transition">
+            <svg class="w-4 h-4 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+            </svg>
+            <span>えらんだプランを見比べる (<span id="compare-count">0</span>)</span>
+          </button>
+          <button onclick="clearHistory()" class="px-3 py-2 text-xs text-gray-500 hover:text-red-700 hover:underline">
+            すべて消す
+          </button>
+        </div>
+      </div>
+
+      <!-- 保存と引き継ぎ（ファイルの書き出し・読み込み） -->
+      <div class="no-print bg-white border border-classic-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <p class="text-sm text-gray-700">
+          <strong class="text-classic-navy">ファイルで持ち運ぶ</strong>：書き出したファイルを相手に送ったり、次の集まりで読み込んだりできます。書き込みや写真も一緒に保存されます。
+        </p>
+        <div class="flex flex-wrap gap-2 shrink-0">
+          <button type="button" data-action="export-json" class="px-4 py-2 bg-classic-burgundy hover:bg-[#722736] text-white rounded-lg text-sm font-bold shadow">ファイルに書き出す</button>
+          <label class="px-4 py-2 bg-white border-2 border-classic-burgundy text-classic-burgundy hover:bg-[#FAF4E8] rounded-lg text-sm font-bold cursor-pointer focus-within:ring-2 focus-within:ring-classic-gold">
+            ファイルを読み込む
+            <input type="file" id="import-file" accept=".json,application/json" class="sr-only">
+          </label>
+        </div>
+      </div>
+
+      <!-- 履歴カード一覧グリッド -->
+      <div id="history-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+        <!-- JSで履歴カードを動的生成 -->
+      </div>
+      
+      <!-- 履歴が0件の時のメッセージ -->
+      <div id="empty-history-msg" class="hidden text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+        <p class="text-gray-500 font-serif">まだプランはありません。上の「たたき台をつくる」を押すと、ここに並びます。</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 比較モーダル（画面全面で横並び比較） -->
+  <div id="compare-modal" class="fixed inset-0 z-50 bg-black/60 hidden items-center justify-center p-3 sm:p-6 overflow-y-auto no-print">
+    <div class="bg-white w-full max-w-6xl rounded-2xl shadow-2xl border-2 border-classic-gold overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <!-- モーダルヘッダー -->
+      <div class="bg-classic-navy text-white px-6 py-4 flex items-center justify-between border-b border-classic-gold">
+        <div class="flex items-center space-x-2">
+          <svg class="w-6 h-6 text-classic-gold" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          <h3 class="text-xl font-serif font-bold tracking-wide">
+            プランの見比べ表
+          </h3>
+        </div>
+        <button onclick="closeCompareModal()" class="text-gray-300 hover:text-white p-1 rounded-lg text-2xl font-bold leading-none">
+          &times;
+        </button>
+      </div>
+
+      <!-- モーダル比較コンテンツ（横スクロール可能テーブル） -->
+      <div class="p-4 sm:p-6 overflow-x-auto flex-grow" id="compare-modal-content">
+        <!-- JSで比較表を描画 -->
+      </div>
+
+      <!-- モーダルフッター -->
+      <div class="bg-[#FAF7F0] px-6 py-3 border-t border-classic-border flex items-center justify-between text-sm">
+        <span class="text-gray-600">気になった点を話し合って、行きたいプランを選びましょう。</span>
+        <button onclick="closeCompareModal()" class="px-5 py-2 bg-classic-navy text-white rounded-lg hover:bg-gray-800">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- フッター -->
+  <footer class="bg-classic-navy text-gray-300 border-t-4 border-classic-gold mt-16 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-serif">
+      <div class="flex items-center space-x-3">
+        <span class="text-classic-gold font-bold">名門クラシックホテル 悠久の旅路プランナー</span>
+        <span class="text-xs text-gray-400">| ゆとりを持って、歴史と味を楽しむ旅</span>
+      </div>
+      <p class="text-xs text-gray-400 text-center md:text-right">
+        ※本アプリの旅程・歴史・名物案内は日本国内の代表的クラシックホテル（日本クラシックホテルの会加盟ホテル等）の公知情報をもとにした旅行提案の試作ツールです。営業内容や料金は変わることがあるため、お出かけ前に各ホテルの公式情報をご確認ください。
+      </p>
+    </div>
+  </footer>
+
+  <!-- 通知トーストメッセージ -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-classic-navy text-white px-5 py-3 rounded-xl shadow-2xl border border-classic-gold flex items-center space-x-3 text-sm">
+    <span id="toast-icon">✓</span>
+    <span id="toast-message">メッセージ</span>
+  </div>
+
+  <!-- JavaScript アプリケーションロジック -->
+  <script>
+    /* ====================================================================
+       1. クラシックホテル データベース（国内代表10館の詳細情報）
+       ==================================================================== */
+    const HOTELS_DATA = {
+      nikko: {
+        id: "nikko",
+        name: "日光金谷ホテル",
+        location: "栃木県 日光市（世界遺産 日光の社寺すぐ）",
+        founded: "明治6年（1873年）創業",
+        feature: "現存する日本最古のリゾートホテル。アインシュタインやヘレン・ケラーも滞在した、和洋折衷の美しい彫刻と格天井が彩る聖地。",
+        tagline: "世界遺産の森に抱かれた、時を超える木造クラシックリゾート",
+        themeColor: "#8C271E",
+        bgBadge: "bg-[#8C271E]",
+        suitedPurposes: ["architecture", "nature", "gourmet"],
+        highlights: [
+          "日光東照宮と同じ宮大工による緻密な和風彫刻と格天井",
+          "小食堂やメインダイニングに漂う明治・大正期の薫香",
+          "バー「デイサイト」で味わうシングルモルトと創業の物語"
+        ],
+        gourmet: {
+          dinner: "伝統のフランス料理「虹鱒のソテー 金谷風」または「特選とちぎ和牛フィレ肉のロースト」",
+          breakfast: "金谷ホテルのふんわりオムレツと、伝統の焼きたてロイヤルブレッド",
+          specialty: "大正時代のレシピを再現した「百年ライスカレー」"
+        },
+        souvenirs: [
+          { name: "金谷ホテルベーカリー ロイヤルブレッド", desc: "きめ細やかな口溶けとミルクの甘み。旅の定番として喜ばれる逸品。" },
+          { name: "百年ライスカレー（缶詰・レトルト詰め合わせ）", desc: "ココナッツミルクとスパイスが織りなす大正浪漫の深みある味。" },
+          { name: "日光名物・元祖日光湯波 または 日光羊羹", desc: "東照宮御用達の老舗が手がける、甘さ控えめで上品な銘菓。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:30", action: "東武日光駅に到着", detail: "特急スペーシアXで快適な移動。駅前でゆば料理の昼食。" },
+            { time: "13:00", action: "世界遺産「日光東照宮・輪王寺」参拝", detail: "陽明門の彫刻や眠り猫を拝観。石畳の杉並木をゆっくり散策。" },
+            { time: "15:30", action: "日光金谷ホテルにチェックイン", detail: "歴史あるロビーの彫刻や回転扉に迎えられ、客室へ。" },
+            { time: "16:30", action: "ホテル館内「歴史遺産ツアー」", detail: "スタッフの案内で館内の眠り猫似の彫刻やアインシュタインの足跡を巡る。" },
+            { time: "18:30", action: "メインダイニングで伝統ディナー", detail: "歴代料理長が受け継いできた名物「虹鱒のソテー 金谷風」を堪能。" },
+            { time: "21:00", action: "バー「デイサイト」で寛ぎの一杯", detail: "暖炉の温もりを感じながら、静かに更けゆく日光の夜を味わう。" }
+          ],
+          day2: [
+            { time: "08:00", action: "朝食：優雅な洋朝食", detail: "名物ロイヤルブレッドトーストと出来立てのオムレツに舌鼓。" },
+            { time: "09:30", action: "中禅寺湖畔・旧イタリア大使館別荘記念公園へ", detail: "いろは坂を抜け、昭和初期の外交官たちの避暑地建築を望む散策。" },
+            { time: "11:30", action: "ホテルへ戻りチェックアウト", detail: "売店でお土産のパンやカレー、木彫り細工を吟味。" },
+            { time: "12:30", action: "神橋のたもとで名物湯波ランチ", detail: "清流・大谷川を眺めながら静かな昼餉。" },
+            { time: "14:30", action: "東武日光駅より帰路へ", detail: "ゆったりとした座席で車窓の山並みを眺めつつ帰宅。" }
+          ]
+        }
+      },
+
+      fujiya: {
+        id: "fujiya",
+        name: "富士屋ホテル",
+        location: "神奈川県 箱根町・宮ノ下温泉",
+        founded: "明治11年（1878年）創業",
+        feature: "登録有形文化財。神社仏閣を思わせる本館・西洋館・花御殿が連なる、日本屈指の美を誇るリゾート。令和の大改修を経てさらに輝きを増す。",
+        tagline: "花御殿と社寺建築が競演する、箱根の薫り高き至宝",
+        themeColor: "#801B24",
+        bgBadge: "bg-[#801B24]",
+        suitedPurposes: ["architecture", "gourmet", "nature", "anniversary"],
+        highlights: [
+          "各室ごとに異なる花の名がつけられた昭和の傑作「花御殿」",
+          "格天井に描かれた636種の高山植物と千匹の雀",
+          "登録有形文化財の旧御用邸「菊華荘」の日本庭園"
+        ],
+        gourmet: {
+          dinner: "メインダイニングルーム「ザ・フジヤ」の伝統フレンチ または 旧御用邸「菊華荘」の会席料理",
+          breakfast: "吹き抜けの優美な空間で味わうクラシックスタイルのブレックファスト",
+          specialty: "ベーカリー「PICOT」のクラシックカレーパン＆アップルパイ"
+        },
+        souvenirs: [
+          { name: "ベーカリーPICOT アップルパイ＆カレーパン", desc: "シナモン香るジューシーなリンゴと秘伝パイ生地の絶品。" },
+          { name: "富士屋ホテル倶楽部 伝統のビーフカレー", desc: "牛肉と香味野菜をじっくり煮込んだ、深くまろやかな名ホテルの味。" },
+          { name: "箱根寄木細工の記念コースターや小物入れ", desc: "宮ノ下の職人技が光る、幾何学模様が美しい木工芸品。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:00", action: "小田原または箱根湯本から宮ノ下へ", detail: "箱根登山鉄道のスイッチバックを楽しみながら山あいの宮ノ下へ。" },
+            { time: "12:00", action: "宮ノ下セピア通りで名物ランチ", detail: "骨董店やレトロなカフェが並ぶ坂道をのんびり散策。" },
+            { time: "14:30", action: "富士屋ホテルにチェックイン", detail: "花御殿の意匠に息を呑み、歴史の息吹漂う客室で一服。" },
+            { time: "15:30", action: "ホテルミュージアム見学と庭園散策", detail: "館内の貴重な史料展示を巡り、水車小屋のある池泉回遊式庭園へ。" },
+            { time: "18:00", action: "メインダイニング「ザ・フジヤ」で夕食", detail: "登録有形文化財の社寺風吹き抜け天井の下で、伝統のフレンチコース。" },
+            { time: "20:30", action: "宮ノ下の名湯に浸かり、優雅な夜景を眺める", detail: "歴史ある源泉の湯で旅の疲れを心ゆくまで癒す。" }
+          ],
+          day2: [
+            { time: "08:00", action: "クラシックブレックファスト", detail: "焼きたてのクロワッサンとこだわり卵料理の朝餉。" },
+            { time: "09:30", action: "旧御用邸「菊華荘」で名園鑑賞", detail: "明治の皇族別邸の厳かな佇まいと手入れの行き届いた日本庭園を歩く。" },
+            { time: "11:00", action: "チェックアウト＆ベーカリーPICOTでお土産選び", detail: "人気のカレーパンやアップルパイを買い求める。" },
+            { time: "12:00", action: "彫刻の森美術館 または ポーラ美術館へ", detail: "緑豊かな箱根の自然と調和した名画や現代彫刻を鑑賞。" },
+            { time: "15:00", action: "箱根湯本駅よりロマンスカーで帰路へ", detail: "ゆったりとした特急座席で箱根路の余韻に浸る。" }
+          ]
+        }
+      },
+
+      mampei: {
+        id: "mampei",
+        name: "万平ホテル",
+        location: "長野県 北佐久郡軽井沢町",
+        founded: "明治27年（1894年）創業",
+        feature: "避暑地・軽井沢を象徴するアルプス館。ジョン・レノンが足繁く通い愛したカフェテラスと、落葉松の木立に囲まれた静謐な時間が魅力。",
+        tagline: "落葉松の風と珈琲の香り。文人墨客が愛した高原の名門",
+        themeColor: "#2F4858",
+        bgBadge: "bg-[#2F4858]",
+        suitedPurposes: ["nature", "gourmet", "architecture", "anniversary"],
+        highlights: [
+          "クラシックな格子窓とステンドグラスが美しいアルプス館",
+          "ジョン・レノン直伝のロイヤルミルクティーとアップルパイ",
+          "軽井沢彫りの桜や葡萄のレリーフが施されたクラシック家具"
+        ],
+        gourmet: {
+          dinner: "メインダイニングルームで味わう、信州野菜と信州プレミアム牛のフレンチ",
+          breakfast: "朝露に濡れる木立を眺めながらいただく、信州リンゴジュースとふわふわフレンチトースト",
+          specialty: "カフェテラス伝統の「信州産紅玉のアップルパイ」"
+        },
+        souvenirs: [
+          { name: "万平ホテルオリジナル アップルパイ", desc: "シナモン控えめで紅玉リンゴ本来の酸味と甘みが際立つ伝統の味。" },
+          { name: "信州フルーツジャム詰め合わせ", desc: "浅間山麓の恵みを受けた杏、ルバーブ、ブルーベリーの極上ジャム。" },
+          { name: "伝統の軽井沢彫り 銘々皿・コースター", desc: "万平ホテル館内を彩る彫刻と同じ、職人手彫りの木工芸品。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:00", action: "北陸新幹線にて軽井沢駅到着", detail: "澄み切った高原の空気を胸いっぱいに深呼吸。" },
+            { time: "11:45", action: "旧軽井沢銀座通りを気ままに散策", detail: "老舗のパン屋や手打ち蕎麦屋で名物の信州蕎麦をいただく。" },
+            { time: "14:00", action: "万平ホテルに到着・チェックイン", detail: "落葉松（カラマツ）の並木道を抜け、アルプス館の重厚なロビーへ。" },
+            { time: "15:00", action: "伝説のカフェテラスでティータイム", detail: "ジョン・レノンが愛したロイヤルミルクティーと名物アップルパイ。" },
+            { time: "16:30", action: "ホテル史料室と軽井沢彫りの調度品鑑賞", detail: "創業から現代に至る著名人たちの芳名録や調度品をゆっくり拝見。" },
+            { time: "18:30", action: "メインダイニングで正統派フレンチ", detail: "ステンドグラスに明かりが灯る中、信州の食材を散りばめた珠玉のコース。" }
+          ],
+          day2: [
+            { time: "07:30", action: "木漏れ日の中、雲場池（スワンレイク）へ散策", detail: "ホテルから徒歩圏内。水面に映る木々のリフレクションを堪能。" },
+            { time: "08:45", action: "爽やかな高原ブレックファスト", detail: "信州ハムや地元採れたて野菜、ホテルメイドのジャムを味わう。" },
+            { time: "11:00", action: "チェックアウト＆軽井沢タリアセンへ", detail: "塩沢湖のほとりにある睡骨庵やペイネ美術館をのんびり散策。" },
+            { time: "13:30", action: "軽井沢駅周辺でお土産の吟味", detail: "万平ホテルの焼き菓子や信州銘酒を買い揃える。" },
+            { time: "15:00", action: "新幹線にてゆったり帰路へ", detail: "車窓から浅間山を眺めながら、高原ステイの余韻に浸る。" }
+          ]
+        }
+      },
+
+      nara: {
+        id: "nara",
+        name: "奈良ホテル",
+        location: "奈良県 奈良市（奈良公園・春日大社一の鳥居そば）",
+        founded: "明治42年（1909年）創業",
+        feature: "「関西の迎賓館」として誕生。辰野金吾設計の桃山御殿風檜造り。オードリー・ヘップバーンや皇族方が愛した、古都の森に佇む木造建築の傑作。",
+        tagline: "辰野金吾が描いた和洋の美。神鹿が遊ぶ古都の迎賓館",
+        themeColor: "#613B28",
+        bgBadge: "bg-[#613B28]",
+        suitedPurposes: ["architecture", "nature", "anniversary"],
+        highlights: [
+          "東京駅も手掛けた名建築家・辰野金吾による桃山風の破風屋根と赤絨毯",
+          "大階段の吹き抜けに配された鳥居付きの和風マントルピース（暖炉）",
+          "アインシュタインが弾いた100年前のピアノと名画の数々"
+        ],
+        gourmet: {
+          dinner: "メインダイニングルーム「三笠」の明治のレシピを昇華させたクラシックフレンチ",
+          breakfast: "奈良ホテルの伝統の朝食「大和の茶粥定食」または「アメリカンブレックファスト」",
+          specialty: "バー「ザ・バー」のシグネチャーカクテル「古都」"
+        },
+        souvenirs: [
+          { name: "奈良ホテル特製 クッキー缶（クラシック缶）", desc: "創業当時の正倉院宝相華文様をデザインした重厚な缶入りの焼き菓子。" },
+          { name: "奈良伝統・正倉院文様の麻布ふきん・小物", desc: "奈良晒の伝統を受け継ぐ、風合い豊かな蚊帳生地の工芸品。" },
+          { name: "奈良名物・柿の葉寿司 または 吉野葛切り", desc: "サバや鮭の旨味が染み渡る柿の葉寿司は新幹線の供にも最適。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:30", action: "近鉄奈良駅到着・ならまち散策", detail: "格子戸の町家が並ぶならまちを歩き、老舗で吉野葛や素麺の昼食。" },
+            { time: "13:30", action: "興福寺国宝館拝観", detail: "阿修羅像をはじめとする天平彫刻の至宝と対峙。" },
+            { time: "15:00", action: "奈良ホテルにチェックイン", detail: "奈良公園の小高い丘に建つ瓦屋根の殿堂へ。赤絨毯の大階段に迎えられる。" },
+            { time: "16:00", action: "館内アート＆建築ウォーク", detail: "上村松園や横山大観の名画、アインシュタインのピアノを鑑賞。" },
+            { time: "18:00", action: "ダイニング「三笠」で夕食", detail: "春日大社の緑を望む創業当時の空間で、極上のフレンチコース。" },
+            { time: "20:30", action: "バー「ザ・バー」で大人の語らい", detail: "歴代バーテンダーが紡ぐカクテルとともに古都の静寂を味わう。" }
+          ],
+          day2: [
+            { time: "07:30", action: "朝の奈良公園・春日大社参道の静かな散策", detail: "観光客がまだ少ない早朝、木立の中で神鹿たちに出会う神聖な朝。" },
+            { time: "08:45", action: "朝食：伝統の「茶粥定食」", detail: "大和の緑茶で炊き上げた温かな茶粥と色とりどりの小鉢で身体を整える。" },
+            { time: "10:30", action: "東大寺大仏殿・二月堂へ", detail: "大仏殿の威容を拝し、二月堂の舞台から奈良盆地を一望。" },
+            { time: "12:30", action: "ホテルショップでお買い物＆チェックアウト", detail: "人気のクッキー缶や奈良ホテルのオリジナルグッズを購入。" },
+            { time: "14:00", action: "京都または新大阪駅経由で帰路へ", detail: "古都の豊かな歴史の記憶とともに帰路につく。" }
+          ]
+        }
+      },
+
+      tokyo: {
+        id: "tokyo",
+        name: "東京ステーションホテル",
+        location: "東京都 千代田区・東京駅丸の内駅舎内",
+        founded: "大正4年（1915年）創業",
+        feature: "国指定重要文化財の赤レンガ駅舎に位置する唯一無二のホテル。文豪・川端康成や松本清張が執筆に滞在した、時を超えて息づく品格の空間。",
+        tagline: "重要文化財の赤レンガ駅舎に泊まる、文豪たちが愛した聖域",
+        themeColor: "#842A27",
+        bgBadge: "bg-[#842A27]",
+        suitedPurposes: ["architecture", "gourmet", "anniversary"],
+        highlights: [
+          "東京駅の壮麗な南北ドームのレリーフを間近に見下ろすドームサイド客室",
+          "松本清張が「点と線」の着想を得た歴史を物語る原稿用紙モチーフのメモ帳",
+          "赤レンガの壁面を活かした重厚なバー「カメリア」や「オーク」"
+        ],
+        gourmet: {
+          dinner: "レストラン「ブラン ルージュ」の現代フレンチ、または老舗すし割烹",
+          breakfast: "ゲストラウンジ「アトリウム」の天井高9mの天窓の下でいただく110種以上の贅沢ブッフェ",
+          specialty: "名物バーテンダーによる「東京ステーションホテル特製ハイボール」"
+        },
+        souvenirs: [
+          { name: "ホテルオリジナル「とらや」羊羹詰め合わせ", desc: "東京駅丸の内駅舎をモチーフにした限定パッケージの極上小形羊羹。" },
+          { name: "原稿用紙デザインのオリジナルステーショナリー", desc: "文豪ゆかりのホテルならではの便箋と万年筆インク。" },
+          { name: "帝国劇場・丸の内界隈の老舗名菓セレクション", desc: "皇居周辺散策の記念になる、洗練された東京土産。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "13:00", action: "東京駅に到着・丸の内駅舎を外から鑑賞", detail: "丸の内広場から辰野金吾が設計した三層赤レンガ駅舎の全景を撮影。" },
+            { time: "14:00", action: "皇居東御苑・和田倉噴水公園をゆったり散策", detail: "緑豊かな江戸城の石垣とお濠の風を感じる大人の散歩。" },
+            { time: "15:30", action: "東京ステーションホテルにチェックイン", detail: "駅の改札から直結の隠れ家のようなエントランスから上質な静けさへ。" },
+            { time: "16:30", action: "南北ドームのレリーフ鑑賞と館内散策", detail: "八角形ドームに飾られた干支のレリーフや鳳凰の彫刻を客室廊下から一望。" },
+            { time: "18:30", action: "フレンチ「ブラン ルージュ」で美食の夕べ", detail: "全国の厳選食材とシェフの技が光る繊細なフランス料理をワインとともに。" },
+            { time: "21:00", action: "名門バー「オーク」で夜を締めくくる", detail: "赤レンガの壁に囲まれたシックなカウンターで伝説のカクテルを一杯。" }
+          ],
+          day2: [
+            { time: "08:00", action: "アトリウムで至高のブレックファスト", detail: "赤レンガ駅舎の屋根裏空間に設けられた天窓からの朝光と絶品料理。" },
+            { time: "10:00", action: "東京ステーションギャラリーまたは三菱一号館へ", detail: "駅舎内の美術館で企画展を鑑賞。赤レンガの展示空間も必見。" },
+            { time: "12:00", action: "チェックアウト＆KITTE・丸の内で昼食", detail: "旧東京中央郵便局の郵便局長室を見学し、東京駅を望むテラスへ。" },
+            { time: "14:00", action: "丸ビル・新丸ビルでお土産選び", detail: "限定のスイーツやお茶を選び、新幹線へスムーズに乗車。" }
+          ]
+        }
+      },
+
+      newgrand: {
+        id: "newgrand",
+        name: "ホテルニューグランド",
+        location: "神奈川県 横浜市中区・山下公園前",
+        founded: "昭和2年（1927年）創業",
+        feature: "マッカーサー元帥やチャップリンが愛した横浜開港のシンボル。山下公園と横浜港を望み、ドリア、ナポリタン、プリン・ア・ラ・モードを生んだ洋食の揺籃。",
+        tagline: "潮風と波音に揺れる洋食発祥の地。横浜モダンクラシック",
+        themeColor: "#1B3B6F",
+        bgBadge: "bg-[#1B3B6F]",
+        suitedPurposes: ["gourmet", "architecture", "anniversary"],
+        highlights: [
+          "本館ロビーの青い絨毯と大階段、横浜家具と天女奏楽之図のタペストリー",
+          "マッカーサー元帥が執務室として使用した「マッカーサーズスイート」",
+          "山下公園と氷川丸、横浜港を行き交う船を一望するオーシャンビュー"
+        ],
+        gourmet: {
+          dinner: "パノラミックレストラン「ル・ノルマンディ」の正統派フレンチ または「ザ・カフェ」",
+          breakfast: "港の朝日を眺めながらいただく「ル・ノルマンディ」の極上オムレツ",
+          specialty: "発祥の味「シーフードドリア」「スパゲッティナポリタン」「プリン・ア・ラ・モード」"
+        },
+        souvenirs: [
+          { name: "ホテルニューグランド レトルト発祥のドリアソース＆カレー", desc: "初代料理長サリー・ワイルが考案したクリーミーなベシャメルソース。" },
+          { name: "オリジナル ラムボール または レトロ缶入りクッキー", desc: "芳醇なラム酒の香りと濃厚なチョコレートが織りなす大人の洋菓子。" },
+          { name: "横浜元町・近沢レース店の記念ハンカチ", desc: "港町横浜の歴史を感じさせる上品なレース小物。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "元町・中華街駅に到着・山手西洋館めぐり", detail: "港の見える丘公園、イギリス館やエリスマン邸のレトロ洋館を散策。" },
+            { time: "14:00", action: "山下公園の海風を感じながらホテルへ", detail: "係留された氷川丸とベイブリッジを眺めつつホテルニューグランドへ。" },
+            { time: "14:30", action: "ホテルニューグランドにチェックイン", detail: "本館の大階段を上り、フェニックスルームの重厚な意匠に感嘆。" },
+            { time: "15:30", action: "「ザ・カフェ」で発祥のプリン・ア・ラ・モード", detail: "横長のガラス器にフルーツが並ぶ元祖プリン・ア・ラ・モードに舌鼓。" },
+            { time: "18:00", action: "「ル・ノルマンディ」で豪華客船のようなディナー", detail: "フランス客船ノルマンディ号を模した空間で、港の夜景とフレンチを満喫。" },
+            { time: "20:30", action: "バー「シーガーディアンII」でサボイ・カクテル", detail: "作家・サザンオールスターズの曲でも知られる名バーでヨコハマカクテル。" }
+          ],
+          day2: [
+            { time: "08:00", action: "爽やかな港の朝食", detail: "朝日がきらめく横浜港を眺めながら焼きたてクロワッサンと卵料理。" },
+            { time: "09:30", action: "氷川丸の見学または赤レンガ倉庫へ散策", detail: "昭和の豪華客船の船内をじっくり見学。アールデコ調の一等食堂。" },
+            { time: "11:30", action: "チェックアウト＆本館ロビーで記念撮影", detail: "重厚な椅子に腰掛け、横浜モダンの思い出をカメラに収める。" },
+            { time: "12:30", action: "「ザ・カフェ」で発祥のシーフードドリア", detail: "旅の締めくくりに、エビとホタテが香る元祖ドリアのランチ。" },
+            { time: "14:30", action: "横浜駅より東海道線・新幹線で帰路へ", detail: "開港の浪漫あふれる旅を振り返りつつ帰路へ。" }
+          ]
+        }
+      },
+
+      gamagori: {
+        id: "gamagori",
+        name: "蒲郡クラシックホテル",
+        location: "愛知県 蒲郡市・竹島海岸",
+        founded: "昭和9年（1934年）創業",
+        feature: "三河湾国定公園の絶景を望む城郭風建築。緑の瓦屋根とアールデコ調の調度品が見事に融合し、国の登録有形文化財にも指定された名宿。",
+        tagline: "三河湾と霊峰竹島を一望する、城郭造りのアールデコ名館",
+        themeColor: "#2C5E43",
+        bgBadge: "bg-[#2C5E43]",
+        suitedPurposes: ["nature", "architecture", "gourmet", "anniversary"],
+        highlights: [
+          "城郭風の城天守を思わせる重厚な外観と、室内を彩る華麗なアールデコ意匠",
+          "ホテル眼下に広がる青い三河湾と天然記念物「竹島」を望むパノラマ",
+          "春のツツジ庭園（約3,000本が咲き誇る絶景）と四季の彩り"
+        ],
+        gourmet: {
+          dinner: "メインダイニングでの三河湾の海の幸と「みかわ牛」のフレンチコース",
+          breakfast: "三河湾の朝凪を眺めながらいただく、地場野菜と温かいスープの洋朝食",
+          specialty: "三河湾名物の伊勢海老・平目・鮑を使ったクラシックブイヤベース"
+        },
+        souvenirs: [
+          { name: "蒲郡クラシックホテル特製 焼き菓子アソート", desc: "ホテルの優美な外観が描かれたクラシック缶入りのガレットとサブレ。" },
+          { name: "三河湾産 焼海苔・えびせんべい銘菓", desc: "豊かな三河の磯の香りが凝縮された、酒の肴にも最高の手土産。" },
+          { name: "竹島八百富神社の開運厄除け守り", desc: "日本七弁天の一つである竹島神社で授かる由緒あるお守り。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "蒲郡駅に到着・三河湾の海鮮ランチ", detail: "地魚の海鮮丼や名物めひかりの唐揚げを堪能。" },
+            { time: "13:30", action: "竹島橋を渡り「竹島」へ参拝", detail: "長さ387mの橋を渡り、島全体が天然記念物の八百富神社へ。" },
+            { time: "15:00", action: "蒲郡クラシックホテルにチェックイン", detail: "小高い丘の上にそびえる城郭風建築へ。ロビーのアールデコ照明が迎える。" },
+            { time: "16:00", action: "広大な庭園散策とラウンジティー", detail: "三河湾を見晴らす庭園を歩き、ラウンジ「アゼリア」で絶景紅茶タイム。" },
+            { time: "18:30", action: "メインダイニングでフレンチディナー", detail: "三河湾で獲れた新鮮な魚介と厳選みかわ牛をソムリエ厳選ワインとともに。" },
+            { time: "21:00", action: "夜の竹島橋ライトアップをバルコニーから眺望", detail: "海風を感じながら静寂な三河湾の夜景を満喫。" }
+          ],
+          day2: [
+            { time: "07:30", action: "日の出に輝く三河湾を望む優雅な朝食", detail: "穏やかな海を走る漁船を遠くに眺めつつ、ホテルメイドの洋朝食。" },
+            { time: "09:30", action: "竹島水族館 または 蒲郡市生命の海科学館見学", detail: "深海魚で全国的に有名な竹島水族館でユニークな展示を楽しむ。" },
+            { time: "11:30", action: "チェックアウト＆ホテル特製土産の購入", detail: "売店で名物クッキーや三河木綿の布製品を記念に選ぶ。" },
+            { time: "13:00", action: "豊橋または名古屋経由で帰路へ", detail: "東海道新幹線で心地よい疲れとともに帰宅。" }
+          ]
+        }
+      },
+
+      unzen: {
+        id: "unzen",
+        name: "雲仙観光ホテル",
+        location: "長崎県 雲仙市・雲仙温泉",
+        founded: "昭和10年（1935年）創業",
+        feature: "外国人避暑客のために建てられた日本最初の国立公園リゾート。スイス・シャレー（山小屋）風のハーフティンバー様式と源泉かけ流しの硫黄泉が魅力。",
+        tagline: "スイス山小屋風の木の温もり。硫黄香る雲仙の温泉遺産",
+        themeColor: "#4E2E1E",
+        bgBadge: "bg-[#4E2E1E]",
+        suitedPurposes: ["nature", "architecture", "gourmet", "anniversary"],
+        highlights: [
+          "スイス山小屋風のハーフティンバー外観と丸太梁が交差する大吹き抜け",
+          "手斧（ちょうな）削りの階段手すりやステンドグラスの温かみ",
+          "アールデコ調のタイル張りが美しい源泉かけ流しのドーム温泉浴室"
+        ],
+        gourmet: {
+          dinner: "ダイニングルームで味わう、長崎の山海の幸を活かした雲仙フレンチ",
+          breakfast: "クラシックな空間でいただく、雲仙の新鮮卵と地元野菜の朝食",
+          specialty: "バー「The Bar」で燻製ナッツと味わう長崎ゆかりのカクテル"
+        },
+        souvenirs: [
+          { name: "雲仙観光ホテルオリジナル パウンドケーキ", desc: "ドライフルーツとバターの風味がぎっしり詰まった重厚な焼き菓子。" },
+          { name: "雲仙名物・湯せんぺい（手焼き）", desc: "温泉水を使って焼き上げる、サクサクと香ばしい伝統銘菓。" },
+          { name: "長崎カステラの老舗謹製 特製五三焼", desc: "卵黄を贅沢に使い、底にザラメが敷かれた最高峰のカステラ。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "諫早駅よりレンタカーまたはバスで雲仙へ", detail: "橘湾の絶景ロードをドライブしながら標高700mの雲仙高原へ。" },
+            { time: "13:30", action: "雲仙地獄めぐり", detail: "白い噴煙と硫黄の香りが立ち込める地獄地帯を木道に沿って見学。" },
+            { time: "15:00", action: "雲仙観光ホテルにチェックイン", detail: "山小屋風の緑屋根と丸太梁のエントランス。ビリヤード室や図書室が迎える。" },
+            { time: "16:00", action: "名湯・アールデコタイルの大浴場で湯あみ", detail: "天井の高いレトロなドーム風呂で、白濁した硫黄泉に心身を委ねる。" },
+            { time: "18:30", action: "ダイニングルームで伝統フレンチ", detail: "島原半島の豊かな土壌で育った野菜と長崎の新鮮魚介を堪能。" },
+            { time: "21:00", action: "バーで暖炉の薪が爆ぜる音に耳を傾ける", detail: "クラシックな蓄音機が飾られた空間で、落ち着いた大人の夜景。" }
+          ],
+          day2: [
+            { time: "08:00", action: "山あいの澄んだ空気の中での朝食", detail: "焼きたての香ばしいパンと地場産ミルク、出来立てオムレツ。" },
+            { time: "09:30", action: "図書室でクラシックな蔵書をめくる", detail: "昔の外国人観光客が残した洋書や旅の写真集に触れる静かな時間。" },
+            { time: "11:00", action: "チェックアウト＆仁田峠へ", detail: "雲仙ロープウェイに乗り、妙見岳から有明海と普賢岳の火口を望む。" },
+            { time: "13:30", action: "島原城下町散策・名物具雑煮の昼食", detail: "湧水が流れる武家屋敷街を歩き、出汁の効いた郷土料理に舌鼓。" },
+            { time: "16:00", action: "長崎空港または長崎駅より帰路へ", detail: "異国情緒と温泉のぬくもりを胸に帰路につく。" }
+          ]
+        }
+      },
+
+      kawana: {
+        id: "kawana",
+        name: "川奈ホテル",
+        location: "静岡県 伊東市・川奈海岸",
+        founded: "昭和11年（1936年）創業",
+        feature: "大倉喜七郎男爵が英国のカントリーハウスを模して築いた海の上の城。世界トップ100に選ばれる名門ゴルフコースと、相模湾・富士山を一望する景観。",
+        tagline: "大倉男爵の夢が息づく。富士と相模湾を望む海辺の英国調リゾート",
+        themeColor: "#1E3F5A",
+        bgBadge: "bg-[#1E3F5A]",
+        suitedPurposes: ["nature", "gourmet", "anniversary", "architecture"],
+        highlights: [
+          "赤瓦屋根と白壁、英国カントリーハウスの趣を持つ大広間ロビー",
+          "富士コース・大島コースを眼下に見下ろす展望台からの360度絶景",
+          "歴史あるステンドグラスと暖炉が調和するサンパーラー"
+        ],
+        gourmet: {
+          dinner: "メインダイニングでのクラシックフレンチ または 伊豆の海の幸を味わう和会席「田舎屋」",
+          breakfast: "相模湾の水平線を望みながらいただく、ホテル特製フレンチトーストとフレッシュジュース",
+          specialty: "昭和初期から引き継がれる「川奈特製フルーツケーキ」"
+        },
+        souvenirs: [
+          { name: "川奈ホテル伝統 フルーツケーキ（木箱入り）", desc: "洋酒にじっくり漬け込んだレーズンやナッツが贅沢に詰まった至宝。" },
+          { name: "川奈オリジナル ゴルフグッズ（マーカー・キャップ）", desc: "名門コースのロゴが入った、ゴルフ好きの知人に喜ばれる品。" },
+          { name: "伊豆特産・わさび漬け または 桜えび煎餅", desc: "天城山麓の清流で育った本わさびを使ったピリッと爽やかな名産品。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "11:30", action: "熱海または伊東駅に特急踊り子号で到着", detail: "車窓から青い相模湾を眺めながらの快適な鉄道旅。" },
+            { time: "12:30", action: "伊東港周辺で金目鯛の煮付けランチ", detail: "伊豆名物の脂がのった金目鯛の甘辛煮を白飯とともに堪能。" },
+            { time: "14:30", action: "川奈ホテルにチェックイン", detail: "松林のワインディングロードを抜け、白亜の英国風カントリーハウスへ。" },
+            { time: "15:30", action: "展望台登頂とサンパーラーでのティータイム", detail: "相模湾、伊豆大島、そして富士山を望む絶景パノラマに息を呑む。" },
+            { time: "18:00", action: "メインダイニングで伝統のディナー", detail: "重厚なシャンデリアの下、伊豆の伊勢海老やあしたか牛を味わう。" },
+            { time: "20:30", action: "温泉施設「ブリサ マリナ」で海風の露天風呂", detail: "水平線に浮かぶ漁火（いさりび）を眺めながら極上の温泉浴。" }
+          ],
+          day2: [
+            { time: "07:00", action: "朝日に輝く富士コースと相模湾の散策", detail: "海沿いの名門コースの緑と、波打ち際の朝の静けさを楽しむ。" },
+            { time: "08:15", action: "サンパーラーで朝食", detail: "光が差し込むガラス張りの空間で、名物フレンチトーストを堪能。" },
+            { time: "10:00", action: "歴史展示室（川奈の歩みと大倉喜七郎男爵の生涯）鑑賞", detail: "昭和の激動期にマリリン・モンローも訪れた歴史をたどる。" },
+            { time: "11:30", action: "チェックアウト＆城ヶ崎海岸の吊り橋へ", detail: "断崖絶壁に架かる門脇吊り橋でスリリングな絶景と潮騒を体感。" },
+            { time: "14:00", action: "伊東駅よりサフィール踊り子号等で優雅に帰路へ", detail: "伊豆の豊かな自然とクラシックホテルの余韻に浸る。" }
+          ]
+        }
+      },
+
+      shima: {
+        id: "shima",
+        name: "志摩観光ホテル（ザ クラシック）",
+        location: "三重県 志摩市・阿児町賢島",
+        founded: "昭和26年（1951年）創業",
+        feature: "伊勢志摩国立公園・英虞湾を望む名門。伊勢志摩サミット2016の主会場となり、山崎豊子の小説『華麗なる一族』の舞台としても名高い極上のリゾート。",
+        tagline: "英虞湾の夕陽とリアス海岸の奇跡。伊勢志摩サミットの舞台",
+        themeColor: "#223B4A",
+        bgBadge: "bg-[#223B4A]",
+        suitedPurposes: ["nature", "gourmet", "anniversary"],
+        highlights: [
+          "サミット首脳陣が並んで記念撮影を行った屋上庭園からの夕陽",
+          "名建築家・村野藤吾が手掛けた温もりある優雅な建築意匠",
+          "英虞湾に沈みゆく日本屈指の夕景を望むゲストラウンジ"
+        ],
+        gourmet: {
+          dinner: "レストラン「ラ・メール ザ クラシック」の海の幸フランス料理",
+          breakfast: "穏やかな英虞湾を眺めながらいただく、鮑のコンソメスープ付き洋朝食",
+          specialty: "ホテル伝統の「伊勢海老のビスク」と「鮑のステーキ」"
+        },
+        souvenirs: [
+          { name: "志摩観光ホテル謹製 伊勢海老のビスク（缶詰）", desc: "伊勢海老の濃厚な旨味とコニャックの香りが凝縮された伝統のスープ。" },
+          { name: "伊勢名物・赤福餅 または 銘菓お福餅", desc: "三重の旅に欠かせない、きめ細かなこし餡とお餅の絶妙な調和。" },
+          { name: "英虞湾産 本真珠（アコヤ真珠）のタイタック・ブローチ", desc: "賢島ならではの気品ある輝き。奥様への記念の贈り物にも最適。" }
+        ],
+        itinerary: {
+          day1: [
+            { time: "12:00", action: "近鉄観光特急「しまかぜ」で賢島駅へ到着", detail: "プレミアムシートでカフェ車両のスイーツを楽しみながら賢島へ。" },
+            { time: "13:00", action: "賢島エスパーニャクルーズで英虞湾遊覧", detail: "リアス海岸の美しい島々と真珠筏（いかだ）を巡る爽快なクルーズ。" },
+            { time: "14:45", action: "志摩観光ホテル ザ クラシックにチェックイン", detail: "村野藤吾設計の柔らかな木の空間。ゲストラウンジでウェルカムドリンク。" },
+            { time: "16:30", action: "屋上庭園でサミット首脳陣が眺めた夕陽を待つ", detail: "刻一刻と茜色から藍色へと染まる英虞湾の夕暮れは息を呑む絶景。" },
+            { time: "18:30", action: "「ラ・メール」で海の幸フランス料理", detail: "名物「伊勢海老のビスク」と「鮑のステーキ」を極上ワインと味わう至福。" },
+            { time: "21:00", action: "カフェ＆ワインバー「リエーブル」で穏やかな夜", detail: "山崎豊子氏が執筆したデスクが残る「ザ クラブ」を静かに見学。" }
+          ],
+          day2: [
+            { time: "07:30", action: "英虞湾の真珠養殖筏を望む爽やかな朝食", detail: "朝の光を浴びながら、贅沢なコンソメや地元食材のオムレツを賞味。" },
+            { time: "09:00", action: "伊勢神宮（内宮・おはらい町・おかげ横丁）へ", detail: "ホテル専用車または近鉄特急で宇治山田へ。2000年の歴史を持つ聖地参拝。" },
+            { time: "12:00", action: "おかげ横丁で名物「伊勢うどん」と「てこね寿司」", detail: "黒い濃厚なタレと極太麺、カツオの漬け丼で三重の味覚を堪能。" },
+            { time: "14:00", action: "赤福本店でお茶と赤福餅のひと休み", detail: "五十鈴川の清流を眺めながら作りたての赤福を味わう。" },
+            { time: "15:30", action: "近鉄特急にて名古屋・京都・大阪方面へ帰路へ", detail: "伊勢路の神聖な祈りと名門ホテルのもてなしに満たされて。" }
+          ]
+        }
+      }
+    };
+
+    /* ====================================================================
+       2. アプリケーション状態管理
+       ==================================================================== */
+    let currentPlan = null;
+    let historyPlans = [];
+    let selectedForCompare = new Set();
+    let isSoundOn = false; // オンライン会議で邪魔にならないよう初期状態は消音
+    let currentFontSize = 'normal'; // normal, large, xlarge
+
+    // 表示用ラベル
+    const LABELS = {
+      purpose: { architecture: '🏛️ 建物と歴史', gourmet: '🍽️ 伝統の味', nature: '🌿 景色とのんびり', anniversary: '💐 お祝い・記念日' },
+      purposeShort: { architecture: '建物と歴史', gourmet: '伝統の味', nature: '景色', anniversary: 'お祝い' },
+      purposeTitle: { architecture: '建物と歴史をたずねる旅', gourmet: '伝統の味をめぐる旅', nature: '景色に憩う旅', anniversary: 'お祝いの旅' },
+      season: { spring: '🌸 春', summer: '☀️ 夏', autumn: '🍁 秋', winter: '❄️ 冬' },
+      seasonTitle: { spring: '桜の春', summer: '涼やかな夏', autumn: '紅葉の秋', winter: '澄んだ冬' },
+      nights: { daytrip: '日帰り', '1night': '一泊二日', '2nights': '二泊三日' },
+      companion: { grand: '孫と', parent: '子どもと', three: '三世代', couple: '夫婦・パートナー', friends: '友人・仲間', solo: 'ひとり旅', other: 'そのほか' },
+      companionTitle: { grand: '孫とめぐる', parent: '子どもとめぐる', three: '三世代でめぐる', couple: 'ふたりでめぐる', friends: '仲間とめぐる', solo: 'ひとりで味わう', other: 'みんなでめぐる' },
+      pace: { relaxed: 'ゆったり', active: 'しっかり巡る' }
+    };
+
+    // 季節ごとの持ち物・注意（ホテル固有の情報ではない一般的な目安）
+    const SEASON_TIPS = {
+      spring: '朝晩は冷えることがあります。羽織るものを一枚。花粉の時期でもあります。',
+      summer: '帽子と水分補給を忘れずに。高原や海辺は朝晩すずしいこともあります。',
+      autumn: '紅葉の時期は道路や駅が混みやすいので、移動は早めに。朝晩の冷えに上着を。',
+      winter: '足元が冷えます。すべりにくい靴と手袋を。山あいは雪や路面の凍結に注意。'
+    };
+
+    // ユーザー向けの音声演出（Tone.js）。読み込めない環境では何もしない
+    let chimeSynth = null;
+    let clickSynth = null;
+    function playChime(type = 'bell') {
+      if (!isSoundOn || typeof Tone === 'undefined') return;
+      try {
+        if (Tone.context.state !== 'running') Tone.start();
+        if (!chimeSynth) {
+          chimeSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+          chimeSynth.volume.value = -12;
+          clickSynth = new Tone.MembraneSynth().toDestination();
+          clickSynth.volume.value = -18;
+        }
+        if (type === 'bell') chimeSynth.triggerAttackRelease(["E5", "B5"], "8n");
+        else if (type === 'create') chimeSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "16n");
+        else if (type === 'click') clickSynth.triggerAttackRelease("C3", "32n");
+      } catch (e) {
+        // 音声ブロック環境へのフォールバック
+      }
+    }
+
+    /* ====================================================================
+       3. 文字サイズ変更（html の font-size を変え、rem 指定の全要素に効かせる）
+       ==================================================================== */
+    function setFontSize(size, silent = false) {
+      if (!['normal', 'large', 'xlarge'].includes(size)) size = 'normal';
+      currentFontSize = size;
+      const root = document.documentElement;
+      root.classList.remove('fs-large', 'fs-xlarge');
+      if (size === 'large') root.classList.add('fs-large');
+      if (size === 'xlarge') root.classList.add('fs-xlarge');
+
+      const ids = { normal: 'btn-font-normal', large: 'btn-font-large', xlarge: 'btn-font-xlarge' };
+      Object.entries(ids).forEach(([key, id]) => {
+        const btn = document.getElementById(id);
+        const active = key === size;
+        btn.classList.toggle('bg-classic-gold', active);
+        btn.classList.toggle('text-classic-navy', active);
+        btn.classList.toggle('font-bold', active);
+        btn.classList.toggle('text-gray-200', !active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      try { localStorage.setItem('cht-font-size', size); } catch (e) { /* 保存できない環境では無視 */ }
+      if (silent) return;
+      playChime('click');
+      showToast(`文字サイズを【${size === 'normal' ? '標準' : size === 'large' ? '大' : '特大'}】にしました`);
+    }
+
+    /* HTML に差し込む文字列は必ずこの関数を通す（引用符や < > による崩れ・注入を防ぐ） */
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      document.getElementById('sound-icon-on').classList.toggle('hidden', !isSoundOn);
+      document.getElementById('sound-icon-off').classList.toggle('hidden', isSoundOn);
+      try { localStorage.setItem('cht-sound', isSoundOn ? 'on' : 'off'); } catch (e) { /* 無視 */ }
+      showToast(`効果音を${isSoundOn ? '鳴らす' : '消音'}にしました`);
+      playChime('bell');
+    }
+
+    let toastTimer = null;
+    function showToast(message, icon = "✓") {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = message;
+      document.getElementById('toast-icon').textContent = icon;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2800);
+    }
+
+    /* ====================================================================
+       4. 旅程の組み立て（日数・ペースを反映した「たたき台」）
+       ==================================================================== */
+    let idSeq = 0;
+    function newId(prefix) {
+      return `${prefix}_${Date.now().toString(36)}${(idSeq++).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    }
+    function toMin(t) {
+      const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '').trim());
+      return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+    }
+    function toTime(min) {
+      const v = Math.max(0, Math.min(23 * 60 + 55, Math.round(min / 5) * 5));
+      return `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
+    }
+    function makeStep(time, action, detail, extra = {}) {
+      return { id: newId('s'), time, action, detail, by: 'tool', note: '', ...extra };
+    }
+
+    // ホテル内・食事・移動の基本行程（ペース調整で削らない行程）を見分けるためのキーワード
+    const CORE_RE = /チェックイン|チェックアウト|朝食|ブレックファスト|夕食|ディナー|ダイニング|館内|ホテル|ラウンジ|バー|カフェテラス|ザ・カフェ|ル・ノルマンディ|ラ・メール|ブラン ルージュ|湯|温泉|浴場|ティータイム|屋上庭園|バルコニー|図書室|展示室|帰路/;
+    const RETURN_RE = /帰路/;
+    const CHECKOUT_RE = /[＆・]?チェックアウト[＆・]?/;
+
+    function buildDays(hotel, nights, pace, companion = 'other') {
+      const it = hotel.itinerary;
+      const copy = s => makeStep(s.time, s.action, s.detail);
+      const lastOf = arr => arr[arr.length - 1];
+      let days;
+
+      if (nights === 'daytrip') {
+        const first = it.day1[0];
+        const sight = it.day1.find((s, i) => i > 0 && !CORE_RE.test(s.action)) || it.day1[1];
+        const back = lastOf(it.day2);
+        const t = toMin(first.time) ?? 11 * 60;
+        days = [{
+          label: '日帰り',
+          theme: 'ホテルで食事と館内見学を楽しむ',
+          steps: [
+            copy(first),
+            makeStep(toTime(t + 60), `${hotel.name}で昼食またはお茶`, `名物：${hotel.gourmet.specialty}。日帰りで使えるレストランやラウンジ、予約が必要かは事前に確認を。`),
+            makeStep(toTime(t + 150), '館内の見どころを見学', hotel.highlights[0]),
+            makeStep(toTime(t + 240), sight.action, sight.detail),
+            RETURN_RE.test(back.action)
+              ? makeStep(toTime(t + 390), back.action, back.detail)
+              : makeStep(toTime(t + 390), '帰路へ', '疲れが出ないうちに、余裕をもって帰路へ。')
+          ]
+        }];
+      } else if (nights === '2nights') {
+        const mid = [];
+        it.day2.forEach(s => {
+          if (RETURN_RE.test(s.action)) return;
+          let action = s.action;
+          if (/チェックアウト/.test(action)) {
+            action = action.replace(CHECKOUT_RE, '').trim();
+            if (!action || /^ホテルへ戻り$/.test(action)) return;
+          }
+          mid.push(makeStep(s.time, action, s.detail));
+        });
+        const lastMid = mid.length ? toMin(lastOf(mid).time) : 13 * 60;
+        const restAt = Math.max(15 * 60 + 30, lastMid + 90);
+        mid.push(makeStep(toTime(restAt), 'ホテルに戻って、のんびり過ごす午後', '連泊ならではのゆとり。ロビーや庭、ラウンジでお茶をしながら、きのうの話をゆっくりと。'));
+        mid.push(makeStep(toTime(Math.max(18 * 60 + 30, restAt + 120)), '2日目の夕食', `前の晩とは違うお店やメニューを選ぶのも楽しみ。候補：${hotel.gourmet.dinner}`));
+
+        const back = it.day2.filter(s => RETURN_RE.test(s.action)).pop();
+        days = [
+          { label: '1日目', theme: '到着・ホテルの歴史と夕食', steps: it.day1.map(copy) },
+          { label: '2日目', theme: '連泊の中日：近くをめぐり、午後はホテルでのんびり', steps: mid },
+          {
+            label: '3日目', theme: '朝食・お土産選び・帰路', steps: [
+              makeStep('08:30', 'ゆっくり朝食', hotel.gourmet.breakfast),
+              makeStep('10:30', 'チェックアウト・お土産選び', `候補：${hotel.souvenirs.map(s => s.name).join('、')}`),
+              back ? makeStep('12:00', back.action, back.detail) : makeStep('12:00', '帰路へ', '名残を惜しみつつ、余裕をもって帰路へ。')
+            ]
+          }
+        ];
+      } else {
+        days = [
+          { label: '1日目', theme: '到着・ホテルの歴史と夕食', steps: it.day1.map(copy) },
+          { label: '2日目', theme: '朝食・まわりの散策・帰路', steps: it.day2.map(copy) }
+        ];
+      }
+
+      const skipped = pace === 'relaxed' ? applyRelaxedPace(days) : [];
+      applyCompanion(days, companion);
+      return { days, skipped };
+    }
+
+    // いっしょに行く人に合わせて、予定を加えたり説明を書き足したりする。
+    // ホテル固有の事実は増やさず、どのホテルにも当てはまる一般的な内容にとどめる。
+    const COMPANION_PLANS = {
+      couple: {
+        note: 'ふたり旅に合わせて、記念の写真を撮る時間を入れています。',
+        afterCheckin: ['ロビーや庭で、ふたりの記念写真を一枚', 'ホテルの方に頼むと撮ってもらえることも。ふたり並んだ写真は、意外と少ないものです。']
+      },
+      solo: {
+        note: 'ひとり旅に合わせて、自分のペースで過ごす時間を入れています。',
+        afterCheckin: ['館内の椅子や窓辺で、読書や日記の時間', '急がずに、好きなだけ。気になった場所に戻ってみるのも、ひとり旅ならでは。'],
+        dinnerAdd: 'ひとりの場合は、カウンター席や窓際の席を予約のときに相談すると、落ち着いて過ごせます。'
+      },
+      friends: {
+        note: '仲間との旅に合わせて、夜に語らいの時間を入れています。',
+        afterDinner: ['ラウンジや部屋で、語らいの時間', '昔の話や近況を、時間を気にせずゆっくりと。']
+      },
+      parent: {
+        note: '子どもとの旅に合わせて、思い出話の時間を入れています。',
+        afterDinner: ['家族の思い出話の時間', '昔の家族旅行の写真を持っていくと、話がはずみます。']
+      },
+      grand: {
+        note: '孫との旅に合わせて、いっしょに楽しめる「館内探検」を入れています。',
+        afterCheckin: ['孫といっしょに館内探検', '古い家具や階段、めずらしい飾りを探して歩く。建物の昔話をするよい機会にも。'],
+        dinnerAdd: '子ども向けの料理や子ども料金があるかは、予約のときに確認を。'
+      },
+      three: {
+        note: '三世代の旅に合わせて、館内探検とみんなの記念撮影を入れています。',
+        afterCheckin: ['孫といっしょに館内探検', '古い家具や階段、めずらしい飾りを探して歩く。建物の昔話をするよい機会にも。'],
+        dinnerAdd: '大人数なので、個室や席の並びは予約のときに相談を。子ども向けの料理があるかも確認しておくと安心です。',
+        lastMorning: ['みんなで記念撮影', '玄関やロビーなど、建物がよく写る場所で。三世代そろった写真は、きっと宝物になります。']
+      },
+      other: {}
+    };
+
+    function applyCompanion(days, companion) {
+      const rule = COMPANION_PLANS[companion];
+      if (!rule) return;
+      const all = days.flatMap((d, di) => d.steps.map((s, i) => ({ s, di, i })));
+      const find = re => all.find(x => re.test(x.s.action));
+      const addAfter = (ref, minutes, [action, detail]) => {
+        const base = toMin(ref.s.time) ?? 12 * 60;
+        insertByTime(days[ref.di].steps, makeStep(toTime(base + minutes), action, detail));
+      };
+
+      // チェックインのあと（日帰りは館内見学のあと）
+      const checkin = find(/チェックイン/) || find(/館内の見どころ/);
+      if (rule.afterCheckin && checkin) addAfter(checkin, 30, rule.afterCheckin);
+
+      // 1日目の夕食（名前に「夕食」がないホテルもあるため、夕方の時間帯の予定でも探す）。
+      // 日帰りは夕食がないので、ホテルでの昼食を代わりに使う
+      const dinner = find(/夕食|ディナー/) || (days.length > 1 ? all.find(x => x.di === 0 && !RETURN_RE.test(x.s.action) && (toMin(x.s.time) ?? 0) >= 17 * 60 + 30 && (toMin(x.s.time) ?? 0) <= 19 * 60 + 30) : null);
+      const meal = dinner || find(/昼食またはお茶/);
+      if (rule.dinnerAdd && meal) {
+        meal.s.detail = `${meal.s.detail}${meal.s.detail ? '　' : ''}※${rule.dinnerAdd}`;
+      }
+      if (rule.afterDinner && meal) {
+        const [action, detail] = rule.afterDinner;
+        addAfter(meal, dinner ? 120 : 45, dinner ? rule.afterDinner : [action.replace('ラウンジや部屋で、', 'ラウンジで、'), detail]);
+      }
+
+      // 最終日の帰る前
+      if (rule.lastMorning && days.length > 1) {
+        const last = days[days.length - 1].steps;
+        const backIdx = last.length - 1;
+        const prev = last[backIdx - 1] || last[backIdx];
+        const t = Math.max(9 * 60, (toMin(prev.time) ?? 10 * 60) + 15);
+        last.splice(backIdx, 0, makeStep(toTime(Math.min(t, (toMin(last[backIdx].time) ?? t + 30) - 15)), ...rule.lastMorning));
+      }
+    }
+
+    // いっしょに行く人ごとの、一般的な心がけ
+    const COMPANION_TIPS = {
+      couple: '記念日が近ければ、予約のときに伝えておくと相談にのってもらえることがあります。',
+      solo: '自分のペースがいちばん。行き先と帰る時間を、家族や知人に伝えておくと安心です。',
+      friends: '部屋割りや支払いの方法は、出発前に決めておくと気楽です。',
+      parent: '重い荷物や乗り換えの手配は、遠慮せず子どもに頼りましょう。',
+      grand: '孫の好きなものを一つ旅程に入れると、いっしょに楽しめます。',
+      three: '大人数の旅は移動に時間がかかります。予定は少なめに、集合は早めに。',
+      other: ''
+    };
+
+    // ゆったりペース：遠出（ホテル外の見物）は1日1か所にしぼり、そのあとに休憩をはさむ。
+    // 朝8時半より前の散策も外す。外した行程は「外した候補」として返し、あとで戻せるようにする。
+    function applyRelaxedPace(days) {
+      const skipped = [];
+      days.forEach((day, di) => {
+        const isLastDay = di === days.length - 1;
+        const kept = [];
+        let outsideKept = false;
+        day.steps.forEach((s, i) => {
+          const pinned = (di === 0 && i === 0) || (isLastDay && i === day.steps.length - 1);
+          const outside = !pinned && !CORE_RE.test(s.action);
+          if (!outside) { kept.push(s); return; }
+          const early = (toMin(s.time) ?? 0) < 8 * 60 + 30;
+          if (outsideKept || early) {
+            skipped.push({ ...s, dayIndex: di });
+            return;
+          }
+          outsideKept = true;
+          kept.push(s);
+          kept.push(null); // 休憩の差し込み位置
+        });
+        day.steps = kept.map((s, i) => {
+          if (s) return s;
+          const prev = toMin(kept[i - 1].time) ?? 12 * 60;
+          const nextStep = kept[i + 1];
+          const next = nextStep ? (toMin(nextStep.time) ?? prev + 120) : prev + 120;
+          const at = next > prev + 30 ? prev + (next - prev) / 2 : prev + 30;
+          return makeStep(toTime(at), 'ひと休み', 'ベンチやカフェで30分ほど休憩。疲れていたら、次の予定は短めに。', { kind: 'rest' });
+        });
+      });
+      return skipped;
+    }
+
+    function getHotel(plan) {
+      return HOTELS_DATA[plan.hotelKey] || HOTELS_DATA.nikko;
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      if (isNaN(d)) return '';
+      return d.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // 条件からプランを1件つくる
+    function createPlan(cond) {
+      let hotelKey = cond.hotelKey;
+      if (!HOTELS_DATA[hotelKey]) {
+        // 「おまかせ」の場合は楽しみ・季節に合わせて選ぶ
+        if (cond.purpose === 'architecture') hotelKey = (cond.season === 'autumn') ? 'nara' : 'fujiya';
+        else if (cond.purpose === 'gourmet') hotelKey = 'newgrand';
+        else if (cond.purpose === 'nature') hotelKey = (cond.season === 'summer') ? 'mampei' : 'gamagori';
+        else if (cond.purpose === 'anniversary') hotelKey = 'shima';
+        else hotelKey = 'nikko';
+      }
+      const hotel = HOTELS_DATA[hotelKey];
+      const title = `${hotel.name}で過ごす${LABELS.seasonTitle[cond.season]}の${LABELS.nights[cond.nights]} 〜${LABELS.companionTitle[cond.companion]} ${LABELS.purposeTitle[cond.purpose]}〜`;
+      const now = new Date().toISOString();
+      const built = buildDays(hotel, cond.nights, cond.pace, cond.companion);
+      return {
+        id: newId('plan'),
+        createdAt: now,
+        updatedAt: now,
+        hotelKey,
+        purpose: cond.purpose,
+        season: cond.season,
+        nights: cond.nights,
+        companion: cond.companion,
+        pace: cond.pace,
+        title,
+        days: built.days,
+        skipped: built.skipped,
+        // 「旅の仲間」をこのプランに写し取る（IDは共通）
+        makers: members.map(m => ({ ...m })),
+        comments: [],
+        evaluations: {},  // { メンバーID: { want: 0〜5, good: "良いと思った点" } }
+        photos: []
+      };
+    }
+
+    function readForm() {
+      return {
+        hotelKey: document.getElementById('hotelSelect').value,
+        purpose: document.querySelector('input[name="purpose"]:checked').value,
+        season: document.getElementById('seasonSelect').value,
+        nights: document.getElementById('nightsSelect').value,
+        companion: document.getElementById('companionSelect').value,
+        pace: document.querySelector('input[name="pace"]:checked').value
+      };
+    }
+
+    function handleGeneratePlan(e) {
+      if (e) e.preventDefault();
+      playChime('create');
+      const plan = createPlan(readForm());
+      currentPlan = plan;
+      historyPlans.unshift(plan);
+      saveState();
+      renderAll();
+      if (window.innerWidth < 1024) {
+        document.getElementById('plan-detail-section').scrollIntoView({ behavior: 'smooth' });
+      }
+      showToast(`「${getHotel(plan).name}」のたたき台をつくりました`);
+    }
+
+    /* ====================================================================
+       5. 旅の仲間と「だれの希望か」
+       ==================================================================== */
+    let members = [];            // 旅の仲間（新しいプランの「旅の仲間」になる）
+    let editingStepId = null;    // 編集中の行程ID（新規追加は "new:日番号"）
+    let editingTitle = false;
+
+    // 人ごとの色（並び順で決まる。世代や性別とは関係ない）。色だけに頼らず名前も必ず表示する
+    const PERSON_TONES = [
+      { badge: 'bg-[#F6E7EA] text-[#5B1E2B] border-[#E3BCC4]', bubble: 'bg-[#FBF1F3] border-[#C98D99]' },
+      { badge: 'bg-[#E6EEF6] text-[#1B3B6F] border-[#B5C8DE]', bubble: 'bg-[#F0F5FA] border-[#7F9CC0]' },
+      { badge: 'bg-[#EEF3EC] text-[#2C5E43] border-[#BCD3C3]', bubble: 'bg-[#F3F7F1] border-[#8FB39A]' },
+      { badge: 'bg-[#F3ECF6] text-[#5A2D6E] border-[#D6C0E0]', bubble: 'bg-[#F8F3FA] border-[#A98BBA]' },
+      { badge: 'bg-[#FBEEE4] text-[#7A3B12] border-[#E9C6AA]', bubble: 'bg-[#FDF5EF] border-[#D39A6E]' },
+      { badge: 'bg-[#E8F4F4] text-[#1F5656] border-[#B5D8D8]', bubble: 'bg-[#F1F8F8] border-[#7FB5B5]' }
+    ];
+    const FIXED_TONES = {
+      both: { badge: 'bg-[#FAF1DD] text-[#7A5A12] border-[#E5CE94]', bubble: 'bg-[#FDF8EC] border-[#D9B862]' },
+      tool: { badge: 'bg-gray-100 text-gray-600 border-gray-300', bubble: 'bg-gray-50 border-gray-300' }
+    };
+
+    function makeMember(name = '') {
+      return { id: newId('m'), name };
+    }
+    function defaultMembers() {
+      return [makeMember('わたし')];
+    }
+    function memberName(m, index = 0) {
+      return (m && m.name) ? m.name : `${index + 1}人目`;
+    }
+    function memberTone(list, m) {
+      const i = Math.max(0, list.findIndex(x => x.id === m.id));
+      return PERSON_TONES[i % PERSON_TONES.length];
+    }
+
+    // by の値（'tool' | 'both' | 'm:<id>'）から表示名と色を求める
+    // 旅の仲間は全プラン共通（members）。外した人は、プランに残した控え（plan.makers）から名前を出す
+    function whoInfo(plan, by) {
+      if (typeof by === 'string' && by.startsWith('m:')) {
+        const id = by.slice(2);
+        const i = members.findIndex(x => x.id === id);
+        if (i >= 0) return { kind: 'person', key: by, name: memberName(members[i], i), tone: PERSON_TONES[i % PERSON_TONES.length] };
+        const old = (plan.makers || []).find(x => x.id === id);
+        if (old && old.name) return { kind: 'person', key: by, name: old.name, tone: FIXED_TONES.tool };
+        return { kind: 'person', key: by, name: '（以前の仲間）', tone: FIXED_TONES.tool };
+      }
+      if (by === 'tool') return { kind: 'tool', key: 'tool', name: 'たたき台', tone: FIXED_TONES.tool };
+      return { kind: 'both', key: 'both', name: 'みんなで', tone: FIXED_TONES.both };
+    }
+    function whoBadge(plan, by) {
+      const w = whoInfo(plan, by);
+      return `<span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${w.tone.badge}">${w.kind === 'tool' ? '🧭 ' : '🙋 '}${esc(w.name)}</span>`;
+    }
+    function whoOptions(plan, selected, { includeTool = true } = {}) {
+      const opts = members.map((m, i) => [`m:${m.id}`, memberName(m, i)]);
+      if (members.length !== 1) opts.push(['both', 'みんなで']);
+      if (includeTool) opts.push(['tool', 'たたき台（ツールの提案）']);
+      return opts.map(([v, l]) => `<option value="${esc(v)}" ${v === selected ? 'selected' : ''}>${esc(l)}</option>`).join('');
+    }
+    // 書く人の初期値（最初の仲間。いなければ「みんなで」）
+    function defaultWho(plan) {
+      return members[0] ? `m:${members[0].id}` : 'both';
+    }
+
+    // 旅の仲間の編集欄（scope: 'global' = 新しく作るプラン用 / 'plan' = このプランの旅の仲間）
+    function renderMemberEditor(list, scope) {
+      const rows = list.map((m, i) => `
+        <div class="flex items-center gap-2" data-member-id="${esc(m.id)}" data-scope="${scope}">
+          <span class="inline-block w-3 h-3 rounded-full border ${PERSON_TONES[i % PERSON_TONES.length].badge}" aria-hidden="true"></span>
+          <input type="text" data-member-field="name" value="${esc(m.name)}" maxlength="30" aria-label="${i + 1}人目の呼び名"
+            placeholder="${i === 0 ? '例：わたし' : '例：友人の田中さん'}"
+            class="flex-1 min-w-0 p-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
+          <button type="button" data-action="member-remove" aria-label="この人を外す" title="この人を外す" class="px-2 py-1.5 text-gray-400 hover:text-red-700 text-lg leading-none">×</button>
+        </div>`).join('');
+      return `
+        <div class="space-y-2">
+          ${rows || '<p class="text-sm text-gray-500">まだだれもいません。</p>'}
+          <button type="button" data-action="member-add" data-scope="${scope}" class="mt-1 px-3 py-1.5 text-sm border border-dashed border-classic-gold text-classic-goldHover rounded-lg hover:bg-[#FAF4E8]">＋ いっしょに行く人を加える</button>
+        </div>`;
+    }
+
+    function renderMembersPanel() {
+      document.getElementById('members-editor').innerHTML = renderMemberEditor(members, 'global');
+    }
+
+    function memberList(scope) {
+      return members; // 旅の仲間は全プラン共通
+    }
+
+    /* ====================================================================
+       6. プラン詳細の描画（たたき台を、自分の旅に書き直していく画面）
+       ==================================================================== */
+    function sectionTitle(text, color = 'bg-classic-gold') {
+      return `
+        <h4 class="text-base sm:text-lg font-serif font-bold text-classic-navy mb-3 flex items-center">
+          <span class="w-2.5 h-5 ${color} rounded-sm mr-2"></span>${esc(text)}
+        </h4>`;
+    }
+
+    const smallBtn = 'px-2.5 py-1 text-xs border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 hover:border-classic-gold';
+
+    function stepControls(step, dayIndex, idx, dayLen, lastDay) {
+      const canUp = idx > 0 || dayIndex > 0;
+      const canDown = idx < dayLen - 1 || !lastDay;
+      return `
+        <div class="no-print mt-1.5 flex flex-wrap gap-1.5">
+          <button type="button" data-action="step-edit" class="${smallBtn}">✏️ なおす・ひとこと</button>
+          <button type="button" data-action="step-up" class="${smallBtn}" ${canUp ? '' : 'disabled style="opacity:.4"'} aria-label="ひとつ上へ" title="ひとつ上へ">↑</button>
+          <button type="button" data-action="step-down" class="${smallBtn}" ${canDown ? '' : 'disabled style="opacity:.4"'} aria-label="ひとつ下へ" title="ひとつ下へ">↓</button>
+          <button type="button" data-action="step-delete" class="${smallBtn} hover:text-red-700" aria-label="この予定を消す" title="この予定を消す">消す</button>
+        </div>`;
+    }
+
+    function renderStepForm(plan, step, dayIndex, isNew) {
+      const s = step || { time: '', action: '', detail: '', by: 'both', note: '' };
+      const field = 'w-full p-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-classic-gold';
+      return `
+        <div class="relative pl-7 no-print">
+          <div class="absolute left-0 top-3 w-3.5 h-3.5 bg-classic-gold rounded-full z-10"></div>
+          <div data-step-form data-step-id="${esc(isNew ? '' : s.id)}" data-day-index="${dayIndex}" class="bg-[#FAF7F0] border-2 border-classic-gold rounded-xl p-3 space-y-2">
+            <p class="text-sm font-bold text-classic-navy">${isNew ? '予定を加える' : '予定をなおす'}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-[8rem_1fr] gap-2">
+              <label class="text-xs text-gray-600">時刻<input type="time" name="time" value="${esc(s.time)}" class="${field}"></label>
+              <label class="text-xs text-gray-600">予定<input type="text" name="action" value="${esc(s.action)}" maxlength="200" placeholder="例：駅前の喫茶店でひと休み" class="${field}"></label>
+            </div>
+            <label class="block text-xs text-gray-600">くわしく<textarea name="detail" rows="2" maxlength="1000" class="${field}">${esc(s.detail)}</textarea></label>
+            <label class="block text-xs text-gray-600">だれの希望か<select name="by" class="${field}">${whoOptions(plan, s.by)}</select></label>
+            <label class="block text-xs text-gray-600">ひとこと（思い出・おすすめの理由・調べたこと）
+              <textarea name="note" rows="2" maxlength="1000" placeholder="例：50年前に新婚旅行で泊まった。ロビーの階段で写真を撮った／調べたら今も同じ場所で営業している" class="${field}">${esc(s.note)}</textarea>
+            </label>
+            <div class="flex gap-2 pt-1">
+              <button type="button" data-action="step-save" class="px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold hover:bg-[#722736]">保存</button>
+              <button type="button" data-action="step-cancel" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50">やめる</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderStep(plan, step, dayIndex, idx, dayLen, lastDay) {
+      if (editingStepId === step.id) return renderStepForm(plan, step, dayIndex, false);
+      const dot = dayIndex === 0 ? 'border-classic-burgundy' : 'border-classic-gold';
+      const noteWho = whoInfo(plan, step.by);
+      const note = step.note ? `
+          <div class="mt-1.5 text-sm border-l-4 rounded-r-lg px-3 py-1.5 ${noteWho.tone.bubble}">
+            💬 <span class="font-bold">${esc(noteWho.name)}のひとこと</span>：${esc(step.note)}
+          </div>` : '';
+      if (step.kind === 'rest') {
+        return `
+        <div class="relative pl-7 avoid-break" data-step-id="${esc(step.id)}" data-day-index="${dayIndex}">
+          <div class="absolute left-0.5 top-1.5 w-2.5 h-2.5 bg-[#E2D8C8] rounded-full z-10"></div>
+          <p class="text-sm text-gray-600"><span class="font-mono text-xs mr-1">${esc(step.time)}</span>☕ <strong class="text-gray-700">${esc(step.action)}</strong>　${esc(step.detail)}</p>
+          ${note}
+          ${stepControls(step, dayIndex, idx, dayLen, lastDay)}
+        </div>`;
+      }
+      return `
+        <div class="relative pl-7 avoid-break" data-step-id="${esc(step.id)}" data-day-index="${dayIndex}">
+          <div class="absolute left-0 top-1.5 w-3.5 h-3.5 bg-white border-2 ${dot} rounded-full z-10"></div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            ${step.time ? `<span class="font-bold text-classic-navy font-mono text-xs inline-block bg-gray-100 px-1.5 py-0.5 rounded">${esc(step.time)}</span>` : ''}
+            ${whoBadge(plan, step.by)}
+          </div>
+          <strong class="text-gray-900 block font-serif text-base mt-0.5">${esc(step.action) || '（予定名なし）'}</strong>
+          ${step.detail ? `<p class="text-sm text-gray-600 mt-0.5 leading-relaxed">${esc(step.detail)}</p>` : ''}
+          ${note}
+          ${stepControls(step, dayIndex, idx, dayLen, lastDay)}
+        </div>`;
+    }
+
+    function renderDays(plan) {
+      const lastIdx = plan.days.length - 1;
+      return plan.days.map((day, di) => `
+        <div class="bg-white p-5 rounded-xl border border-classic-border shadow-sm">
+          <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 pb-2 mb-4">
+            <span class="font-serif font-bold text-classic-burgundy text-lg">【${esc(day.label)}】</span>
+            <span class="text-sm text-gray-600">${esc(day.theme)}</span>
+          </div>
+          <div class="relative timeline-line space-y-4 pl-2">
+            ${day.steps.length ? day.steps.map((s, i) => renderStep(plan, s, di, i, day.steps.length, di === lastIdx)).join('') : '<p class="text-sm text-gray-500 pl-7">まだ予定がありません。</p>'}
+            ${editingStepId === `new:${di}` ? renderStepForm(plan, null, di, true) : `
+              <div class="pl-7 no-print">
+                <button type="button" data-action="step-add" data-day-index="${di}" class="px-3 py-1.5 text-sm border border-dashed border-classic-burgundy text-classic-burgundy rounded-lg hover:bg-[#FBF1F3]">＋ この日に予定を加える</button>
+              </div>`}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderSkipped(plan) {
+      if (!plan.skipped || plan.skipped.length === 0) return '';
+      return `
+        <details class="no-print mt-4 bg-white border border-dashed border-[#D8CBB6] rounded-xl p-4">
+          <summary class="cursor-pointer text-sm font-bold text-classic-navy">ペースに合わせて外した候補（${plan.skipped.length}件）— 行きたければ戻せます</summary>
+          <ul class="mt-2 space-y-2 text-sm text-gray-700">
+            ${plan.skipped.map(s => `
+              <li class="flex flex-wrap items-center gap-2" data-skip-id="${esc(s.id)}">
+                <span class="text-xs bg-gray-100 rounded px-1.5">${esc(plan.days[s.dayIndex] ? plan.days[s.dayIndex].label : '')}</span>
+                <span class="font-mono text-xs">${esc(s.time)}</span>
+                <span>${esc(s.action)}</span>
+                <button type="button" data-action="skip-restore" class="${smallBtn}">旅程に戻す</button>
+              </li>`).join('')}
+          </ul>
+        </details>`;
+    }
+
+    // 旅の仲間（全プラン共通。編集は左の「旅の仲間」欄で行う）
+    function renderMakers(plan) {
+      const chips = members.length
+        ? members.map((m, i) => `<span class="inline-block text-sm font-bold px-2.5 py-0.5 rounded-full border ${memberTone(members, m).badge}">${esc(memberName(m, i))}</span>`).join(' ')
+        : '<span class="text-sm text-gray-500">まだ登録されていません</span>';
+      return `
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+          <span class="text-sm text-gray-600 font-bold">旅の仲間：</span>${chips}
+          <button type="button" data-action="goto-members" class="${smallBtn} no-print">変更（左の欄へ）</button>
+        </div>`;
+    }
+
+    // ひとことメモ（プラン全体への書き込み）
+    function renderComments(plan) {
+      const list = plan.comments.map(c => {
+        const w = whoInfo(plan, c.by);
+        return `
+          <li class="border-l-4 rounded-r-lg px-3 py-2 ${w.tone.bubble} avoid-break" data-comment-id="${esc(c.id)}">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-sm font-bold text-gray-800">${esc(w.full)}</span>
+              <span class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">${esc(formatDate(c.at))}</span>
+                <button type="button" data-action="comment-delete" class="no-print text-gray-400 hover:text-red-700 text-lg leading-none" aria-label="この書き込みを消す" title="この書き込みを消す">×</button>
+              </span>
+            </div>
+            <p class="text-sm text-gray-800 whitespace-pre-wrap mt-0.5">${esc(c.text)}</p>
+          </li>`;
+      }).join('');
+      return `
+        <div class="mb-8">
+          ${sectionTitle('ひとことメモ', 'bg-classic-burgundy')}
+          <p class="text-sm text-gray-600 mb-3 no-print">このプランについて、思い出したこと・楽しみなこと・気になることを書いておけます。</p>
+          ${list ? `<ul class="space-y-2 mb-4">${list}</ul>` : '<p class="text-sm text-gray-500 mb-4">まだ書き込みはありません。</p>'}
+          <div class="no-print bg-[#FAF7F0] border border-classic-border rounded-xl p-3 space-y-2" data-comment-form>
+            <div class="flex flex-wrap items-center gap-2">
+              <label for="comment-by" class="text-sm font-bold text-gray-700">書く人</label>
+              <select id="comment-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, defaultWho(plan), { includeTool: false })}</select>
+            </div>
+            <textarea id="comment-text" rows="2" maxlength="1000" aria-label="ひとこと" placeholder="例：このホテルのカレーは、昔父がよく話していた味です" class="w-full p-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-classic-gold"></textarea>
+            <button type="button" data-action="comment-add" class="px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold hover:bg-[#722736]">書きこむ</button>
+          </div>
+        </div>`;
+    }
+
+    // 思い出の写真（端末内で縮小して保存。どこにもアップロードしない）
+    const MAX_PHOTOS = 6;
+    function renderPhotos(plan) {
+      const items = plan.photos.map(ph => {
+        const w = whoInfo(plan, ph.by);
+        return `
+          <figure class="bg-white border border-gray-200 rounded-xl p-2 shadow-sm avoid-break" data-photo-id="${esc(ph.id)}">
+            <img src="${esc(ph.dataUrl)}" alt="${esc(ph.caption || '思い出の写真')}" class="w-full h-44 object-cover rounded-lg bg-gray-100">
+            <figcaption class="mt-1.5 space-y-1">
+              <span class="inline-block text-xs font-bold px-2 py-0.5 rounded-full border ${w.tone.badge}">${esc(w.name)}</span>
+              <p class="print-only text-sm text-gray-800">${esc(ph.caption)}</p>
+              <input type="text" data-photo-caption value="${esc(ph.caption)}" maxlength="200" aria-label="写真のひとこと" placeholder="いつ・どこで・だれと？"
+                class="no-print w-full p-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-classic-gold">
+              <button type="button" data-action="photo-delete" class="no-print text-xs text-gray-500 hover:text-red-700 underline">この写真を外す</button>
+            </figcaption>
+          </figure>`;
+      }).join('');
+      return `
+        <div class="mb-8">
+          ${sectionTitle('思い出の写真', 'bg-classic-gold')}
+          <p class="text-sm text-gray-600 mb-3 no-print">昔の旅行の写真や、気になる場所の写真を添えられます（${MAX_PHOTOS}枚まで）。写真はこの端末の中だけに保存され、インターネットには送られません。</p>
+          ${items ? `<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">${items}</div>` : '<p class="text-sm text-gray-500 mb-3">まだ写真はありません。</p>'}
+          ${plan.photos.length < MAX_PHOTOS ? `
+          <div class="no-print flex flex-wrap items-center gap-2 bg-[#FAF7F0] border border-classic-border rounded-xl p-3">
+            <label for="photo-by" class="text-sm font-bold text-gray-700">だれの写真</label>
+            <select id="photo-by" class="p-2 text-sm border border-gray-300 rounded-lg bg-white">${whoOptions(plan, defaultWho(plan), { includeTool: false })}</select>
+            <label class="px-4 py-2 bg-classic-burgundy hover:bg-[#722736] text-white rounded-lg text-sm font-bold cursor-pointer focus-within:ring-2 focus-within:ring-classic-gold">
+              📷 写真を選ぶ
+              <input type="file" id="photo-file" accept="image/*" multiple class="sr-only">
+            </label>
+          </div>` : ''}
+        </div>`;
+    }
+
+    // 画像を長い辺 1024px 以内の JPEG に縮小して data URL にする（保存容量を抑えるため）
+    function shrinkImage(file, maxSide = 1024, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('read'));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('decode'));
+          img.onload = () => {
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function addPhotos(files) {
+      const plan = currentPlan;
+      if (!plan || !files || !files.length) return;
+      const by = (document.getElementById('photo-by') || {}).value || 'both';
+      const room = MAX_PHOTOS - plan.photos.length;
+      const list = [...files].filter(f => f.type.startsWith('image/')).slice(0, room);
+      if (files.length > room) showToast(`写真は${MAX_PHOTOS}枚までです`, 'ℹ️');
+      let added = 0;
+      for (const f of list) {
+        try {
+          const dataUrl = await shrinkImage(f);
+          const photo = { id: newId('ph'), dataUrl, caption: '', by, at: new Date().toISOString() };
+          plan.photos.push(photo);
+          touch(plan);
+          if (!saveState()) {
+            plan.photos.pop(); // 容量オーバーなら取り消す
+            saveState();
+            showToast('端末の保存容量がいっぱいで、写真を加えられませんでした', '⚠');
+            break;
+          }
+          added++;
+        } catch (e) {
+          showToast('この写真は読み込めませんでした', '⚠');
+        }
+      }
+      renderAll();
+      if (added) showToast(`写真を${added}枚加えました`);
+    }
+
+    function deletePhoto(photoId) {
+      const plan = currentPlan;
+      if (!plan || !confirm('この写真を外しますか？')) return;
+      plan.photos = plan.photos.filter(p => p.id !== photoId);
+      commit(plan);
+    }
+
+    let captionTimer = null;
+    function updatePhotoCaption(el) {
+      const fig = el.closest('[data-photo-id]');
+      const ph = currentPlan && currentPlan.photos.find(p => p.id === fig.dataset.photoId);
+      if (!ph) return;
+      ph.caption = str(el.value, 200);
+      touch(currentPlan);
+      clearTimeout(captionTimer);
+      captionTimer = setTimeout(saveState, 400);
+    }
+
+    // だれの希望かごとの件数（[{ name, count }]、仲間→みんなで→たたき台の順）
+    function voiceCounts(plan) {
+      const counts = new Map();
+      plan.days.forEach(d => d.steps.forEach(s => {
+        if (s.kind === 'rest') return;
+        const w = whoInfo(plan, s.by);
+        const entry = counts.get(w.key) || { name: w.name, kind: w.kind, count: 0 };
+        entry.count++;
+        counts.set(w.key, entry);
+      }));
+      const order = { person: 0, both: 1, tool: 2 };
+      return [...counts.values()].sort((a, b) => order[a.kind] - order[b.kind]);
+    }
+    function voiceText(plan, sep = '・') {
+      return voiceCounts(plan).map(v => `${esc(v.name)} ${v.count}件`).join(sep) || 'なし';
+    }
+
+    function renderCurrentPlan(plan) {
+      const container = document.getElementById('plan-container');
+      if (!plan) {
+        container.innerHTML = `
+          <div class="text-center py-16 text-gray-500 font-serif">
+            <p class="text-lg">プランがありません。左の条件から「たたき台」をつくってください。</p>
+          </div>`;
+        return;
+      }
+      const h = getHotel(plan);
+      const paceNote = plan.pace === 'relaxed'
+        ? 'ゆったりペース：遠出は1日1か所にしぼり、休憩をはさんでいます。'
+        : 'しっかり巡るペース：近くの名所も多めに入れています。';
+      const titleBlock = editingTitle ? `
+          <div class="no-print flex flex-col sm:flex-row gap-2 mt-1" data-title-form>
+            <input type="text" id="title-input" value="${esc(plan.title)}" maxlength="200" aria-label="プランの名前" class="flex-1 p-2 text-lg font-serif border-2 border-classic-gold rounded-lg">
+            <div class="flex gap-2">
+              <button type="button" data-action="title-save" class="px-4 py-2 bg-classic-burgundy text-white rounded-lg text-sm font-bold">保存</button>
+              <button type="button" data-action="title-cancel" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm">やめる</button>
+            </div>
+          </div>` : `
+          <h2 class="text-2xl sm:text-3xl font-serif font-bold text-classic-navy leading-tight">${esc(plan.title)}
+            <button type="button" data-action="title-edit" class="${smallBtn} no-print align-middle ml-1">名前を変える</button>
+          </h2>`;
+
+      container.innerHTML = `
+        <div class="border-b-2 border-classic-gold pb-4 mb-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white ${esc(h.bgBadge)}">${esc(h.founded)}</span>
+            <div class="flex items-center space-x-2 text-sm text-gray-500 font-serif">
+              <span>作成：${esc(formatDate(plan.createdAt))}</span>
+              <span>•</span>
+              <span class="text-classic-burgundy font-bold">${esc(LABELS.purpose[plan.purpose])}</span>
+            </div>
+          </div>
+          ${titleBlock}
+          <p class="text-base sm:text-lg font-serif text-classic-goldHover mt-1 italic">「${esc(h.tagline)}」</p>
+          <p class="text-sm text-gray-600 mt-1">📍 所在地：${esc(h.location)}</p>
+        </div>
+
+        ${renderMakers(plan)}
+
+        <!-- 旅の条件 -->
+        <div class="bg-[#FAF7F0] p-4 rounded-xl border border-classic-border mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div><span class="text-xs text-gray-500 block">日数</span><span class="text-sm font-bold text-classic-navy">${esc(LABELS.nights[plan.nights])}</span></div>
+          <div><span class="text-xs text-gray-500 block">季節</span><span class="text-sm font-bold text-classic-navy">${esc(LABELS.season[plan.season])}</span></div>
+          <div><span class="text-xs text-gray-500 block">いっしょに行く人</span><span class="text-sm font-bold text-classic-navy">${esc(LABELS.companion[plan.companion])}</span></div>
+          <div><span class="text-xs text-gray-500 block">歩くペース</span><span class="text-sm font-bold text-classic-navy">${esc(LABELS.pace[plan.pace])}</span></div>
+        </div>
+
+        <!-- 旅程 -->
+        <div class="mb-8">
+          ${sectionTitle('旅程（自由に書き直せます）', 'bg-classic-burgundy')}
+          <p class="text-sm text-gray-600 mb-1">${esc(paceNote)}</p>
+          ${(COMPANION_PLANS[plan.companion] || {}).note ? `<p class="text-sm text-gray-600 mb-1">👥 ${esc(COMPANION_PLANS[plan.companion].note)}</p>` : ''}
+          <p class="text-sm text-gray-600 mb-3">
+            だれの希望か：${voiceText(plan)}
+          </p>
+          <div class="space-y-5">${renderDays(plan)}</div>
+          ${renderSkipped(plan)}
+          <p class="text-sm text-gray-700 mt-4 bg-[#F4EFE6] rounded-lg p-3">🧳 <strong>季節のひとこと</strong>：${esc(SEASON_TIPS[plan.season])}</p>
+          ${COMPANION_TIPS[plan.companion] ? `<p class="text-sm text-gray-700 mt-2 bg-[#F4EFE6] rounded-lg p-3">👥 <strong>${esc(LABELS.companion[plan.companion])}の旅のひとこと</strong>：${esc(COMPANION_TIPS[plan.companion])}</p>` : ''}
+        </div>
+
+        ${renderComments(plan)}
+
+        ${renderPhotos(plan)}
+
+        <!-- ホテルの由緒と見どころ -->
+        <div class="mb-8 avoid-break">
+          ${sectionTitle('このホテルの歴史と見どころ')}
+          <p class="text-sm sm:text-base text-gray-700 leading-relaxed font-serif bg-[#FCFAF6] p-4 rounded-xl border-l-4 border-classic-gold">${esc(h.feature)}</p>
+          <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+            ${h.highlights.map(item => `
+              <div class="bg-white p-2.5 rounded-lg border border-gray-200 flex items-start space-x-1.5 shadow-sm">
+                <span class="text-classic-gold font-bold">◆</span>
+                <span class="text-gray-800">${esc(item)}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- 食事 -->
+        <div class="mb-8 bg-[#FAF7F0] p-5 rounded-xl border border-[#D8CBB6] avoid-break">
+          ${sectionTitle('食事の楽しみ')}
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-xs font-bold text-classic-burgundy block mb-1">夕食</span>
+              <p class="text-gray-800 leading-snug font-serif">${esc(h.gourmet.dinner)}</p>
+            </div>
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-xs font-bold text-classic-navy block mb-1">朝食</span>
+              <p class="text-gray-800 leading-snug font-serif">${esc(h.gourmet.breakfast)}</p>
+            </div>
+            <div class="bg-white p-3.5 rounded-lg border border-gray-200">
+              <span class="text-xs font-bold text-classic-goldHover block mb-1">名物</span>
+              <p class="text-gray-800 leading-snug font-serif">${esc(h.gourmet.specialty)}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- お土産 -->
+        <div class="mb-8 avoid-break">
+          ${sectionTitle('おすすめのお土産', 'bg-classic-burgundy')}
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            ${h.souvenirs.map(s => `
+              <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h5 class="text-gray-900 font-serif font-bold text-sm sm:text-base mb-1">${esc(s.name)}</h5>
+                <p class="text-sm text-gray-600 leading-relaxed">${esc(s.desc)}</p>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- 操作ボタン -->
+        <div class="pt-4 border-t border-gray-200 flex flex-wrap items-center justify-end gap-2 no-print">
+          <button type="button" data-action="copy-plan" class="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium shadow-sm transition">旅程を文字でコピー</button>
+          <button type="button" data-action="print" class="px-4 py-2.5 bg-classic-navy hover:bg-[#2c435c] text-white rounded-lg text-sm font-medium shadow transition">印刷する</button>
+        </div>
+      `;
+    }
+
+    /* ====================================================================
+       7. 作ったプランの一覧
+       ==================================================================== */
+    function renderHistoryCards() {
+      const grid = document.getElementById('history-cards-grid');
+      const emptyMsg = document.getElementById('empty-history-msg');
+      document.getElementById('header-history-count').textContent = historyPlans.length;
+
+      if (historyPlans.length === 0) {
+        grid.innerHTML = '';
+        emptyMsg.classList.remove('hidden');
+        return;
+      }
+      emptyMsg.classList.add('hidden');
+
+      grid.innerHTML = historyPlans.map(plan => {
+        const isSelected = selectedForCompare.has(plan.id);
+        const isCurrent = currentPlan && currentPlan.id === plan.id;
+        const h = getHotel(plan);
+        const chip = text => `<span class="bg-[#FAF7F0] px-2 py-0.5 rounded border border-gray-200">${esc(text)}</span>`;
+        const notes = plan.days.reduce((n, d) => n + d.steps.filter(s => s.note).length, 0);
+        const last = plan.comments[plan.comments.length - 1];
+        return `
+          <div class="bg-white rounded-xl border-2 transition ${isCurrent ? 'border-classic-gold shadow-md' : 'border-gray-200 hover:border-gray-300'} p-4 relative flex flex-col justify-between" data-plan-id="${esc(plan.id)}">
+            <div>
+              <div class="flex items-center justify-between mb-2 gap-2">
+                <span class="text-xs px-2 py-0.5 rounded text-white ${esc(h.bgBadge)} font-bold">${esc(h.name)}</span>
+                <span class="text-xs text-gray-500">${esc(formatDate(plan.createdAt))}</span>
+              </div>
+              <h4 class="font-serif font-bold text-classic-navy text-base mb-2 leading-snug">${esc(plan.title)}</h4>
+              <div class="flex flex-wrap gap-1.5 text-xs text-gray-700 mb-2">
+                ${chip(LABELS.season[plan.season])}${chip(LABELS.nights[plan.nights])}${chip(LABELS.companion[plan.companion])}${chip(LABELS.pace[plan.pace])}
+              </div>
+              <p class="text-xs text-gray-600 mb-2">希望：${voiceText(plan)}　💬 ひとこと ${notes + plan.comments.length}件</p>
+              ${(() => { const a = avgWant(plan, comparePeople([plan])); return a !== null ? `<p class="text-sm text-gray-700 mb-2">行きたい度 ${starText(a)}</p>` : ''; })()}
+              ${last ? `<div class="text-sm bg-yellow-50 text-gray-700 p-2 rounded border border-yellow-200 mb-2 line-clamp-2"><strong>${esc(whoInfo(plan, last.by).name)}：</strong>${esc(last.text)}</div>` : ''}
+            </div>
+            <div class="pt-3 border-t border-gray-100 flex items-center justify-between mt-2">
+              <label class="flex items-center space-x-1.5 text-sm text-classic-navy cursor-pointer select-none">
+                <input type="checkbox" data-action="toggle-compare" ${isSelected ? 'checked' : ''} class="rounded text-classic-burgundy focus:ring-classic-gold h-5 w-5">
+                <span class="font-bold">見比べる</span>
+              </label>
+              <div class="flex items-center space-x-1">
+                <button type="button" data-action="view-plan" class="px-3 py-1.5 text-sm bg-classic-navy text-white rounded hover:bg-gray-800 font-serif">ひらく</button>
+                <button type="button" data-action="delete-plan" title="このプランを消す" aria-label="このプランを消す" class="p-1.5 text-gray-400 hover:text-red-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderAll() {
+      renderCurrentPlan(currentPlan);
+      renderHistoryCards();
+      updateCompareUI();
+    }
+
+    /* ====================================================================
+       8. 操作（一覧・旅程の編集・メンバー・ひとこと）
+       ==================================================================== */
+    function findPlan(planId) {
+      return historyPlans.find(p => p.id === planId);
+    }
+
+    function resetEditing() {
+      editingStepId = null;
+      editingTitle = false;
+    }
+
+    function viewPlanDetail(planId) {
+      const p = findPlan(planId);
+      if (!p) return;
+      currentPlan = p;
+      resetEditing();
+      saveState();
+      renderCurrentPlan(p);
+      renderHistoryCards();
+      playChime('bell');
+      document.getElementById('plan-detail-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deletePlan(planId) {
+      const p = findPlan(planId);
+      if (!p) return;
+      if (!confirm(`「${p.title}」を消しますか？\n消したプランは元に戻せません。`)) return;
+      historyPlans = historyPlans.filter(x => x.id !== planId);
+      selectedForCompare.delete(planId);
+      if (currentPlan && currentPlan.id === planId) {
+        currentPlan = historyPlans[0] || null;
+        resetEditing();
+      }
+      saveState();
+      renderAll();
+      showToast("プランを消しました");
+    }
+
+    function clearHistory() {
+      if (historyPlans.length === 0) return;
+      if (!confirm(`作ったプラン ${historyPlans.length} 件をすべて消しますか？\n元に戻せません。先に「ファイルに書き出す」で控えを残すこともできます。`)) return;
+      historyPlans = [];
+      selectedForCompare.clear();
+      currentPlan = null;
+      resetEditing();
+      saveState();
+      renderAll();
+      showToast("プランをすべて消しました");
+    }
+
+    function toggleCompareSelect(planId) {
+      if (selectedForCompare.has(planId)) {
+        selectedForCompare.delete(planId);
+      } else {
+        if (selectedForCompare.size >= 3) {
+          showToast("見比べられるのは3件までです", "⚠");
+          renderHistoryCards();
+          return;
+        }
+        selectedForCompare.add(planId);
+      }
+      updateCompareUI();
+      renderHistoryCards();
+    }
+
+    function updateCompareUI() {
+      // 消えたプランが選択に残らないようにする
+      selectedForCompare.forEach(id => { if (!findPlan(id)) selectedForCompare.delete(id); });
+      const count = selectedForCompare.size;
+      document.getElementById('compare-count').textContent = count;
+      document.getElementById('btn-compare').classList.toggle('opacity-70', count < 2);
+    }
+
+    // --- 旅程の編集 ---
+    function locateStep(plan, stepId) {
+      for (let di = 0; di < plan.days.length; di++) {
+        const i = plan.days[di].steps.findIndex(s => s.id === stepId);
+        if (i >= 0) return { di, i };
+      }
+      return null;
+    }
+
+    // 時刻が入っていれば、その時刻の位置に差し込む（なければ最後へ）
+    function insertByTime(steps, step) {
+      const t = toMin(step.time);
+      if (t === null) { steps.push(step); return; }
+      const at = steps.findIndex(s => (toMin(s.time) ?? -1) > t);
+      if (at < 0) steps.push(step); else steps.splice(at, 0, step);
+    }
+
+    function saveStepForm(formEl) {
+      const plan = currentPlan;
+      if (!plan) return;
+      const get = name => formEl.querySelector(`[name="${name}"]`).value;
+      const values = {
+        time: str(get('time'), 10),
+        action: str(get('action').trim(), 200),
+        detail: str(get('detail').trim(), 1000),
+        by: str(get('by'), 90) || 'both',
+        note: str(get('note').trim(), 1000)
+      };
+      if (!values.action && !values.note) {
+        showToast('「予定」か「ひとこと」を入れてください', '⚠');
+        return;
+      }
+      if (!values.action) values.action = '（予定名なし）';
+      const stepId = formEl.dataset.stepId;
+      if (stepId) {
+        const loc = locateStep(plan, stepId);
+        if (loc) Object.assign(plan.days[loc.di].steps[loc.i], values);
+      } else {
+        const di = Number(formEl.dataset.dayIndex) || 0;
+        insertByTime(plan.days[di].steps, { id: newId('s'), ...values });
+      }
+      editingStepId = null;
+      commit(plan);
+      playChime('bell');
+      showToast(stepId ? '予定をなおしました' : '予定を加えました');
+    }
+
+    function moveStep(stepId, dir) {
+      const plan = currentPlan;
+      const loc = plan && locateStep(plan, stepId);
+      if (!loc) return;
+      const steps = plan.days[loc.di].steps;
+      const [step] = steps.splice(loc.i, 1);
+      const target = loc.i + dir;
+      if (target < 0) {
+        if (loc.di === 0) { steps.splice(loc.i, 0, step); return; }
+        plan.days[loc.di - 1].steps.push(step);            // 前の日の最後へ
+      } else if (target > steps.length) {
+        if (loc.di === plan.days.length - 1) { steps.splice(loc.i, 0, step); return; }
+        plan.days[loc.di + 1].steps.unshift(step);         // 次の日の最初へ
+      } else {
+        steps.splice(target, 0, step);
+      }
+      commit(plan);
+    }
+
+    function deleteStep(stepId) {
+      const plan = currentPlan;
+      const loc = plan && locateStep(plan, stepId);
+      if (!loc) return;
+      const step = plan.days[loc.di].steps[loc.i];
+      if (!confirm(`「${step.action}」を旅程から消しますか？${step.note ? '\n（ひとことも一緒に消えます）' : ''}`)) return;
+      plan.days[loc.di].steps.splice(loc.i, 1);
+      if (editingStepId === stepId) editingStepId = null;
+      commit(plan);
+      showToast('予定を消しました');
+    }
+
+    function restoreSkipped(skipId) {
+      const plan = currentPlan;
+      if (!plan) return;
+      const idx = plan.skipped.findIndex(s => s.id === skipId);
+      if (idx < 0) return;
+      const [s] = plan.skipped.splice(idx, 1);
+      const di = Math.min(s.dayIndex, plan.days.length - 1);
+      const { dayIndex, ...step } = s;
+      insertByTime(plan.days[di].steps, step);
+      commit(plan);
+      showToast('旅程に戻しました');
+    }
+
+    function saveTitle() {
+      const input = document.getElementById('title-input');
+      if (!currentPlan || !input) return;
+      const v = input.value.trim();
+      if (v) currentPlan.title = str(v, 200);
+      editingTitle = false;
+      commit(currentPlan);
+    }
+
+    // --- メンバー ---
+    let memberSaveTimer = null;
+    function scheduleMemberSave() {
+      clearTimeout(memberSaveTimer);
+      memberSaveTimer = setTimeout(() => {
+        saveState();
+      }, 400);
+    }
+
+    function addMember(scope) {
+      const list = memberList(scope);
+      if (!list) return;
+      if (list.length >= 8) { showToast('8人までです', '⚠'); return; }
+      const m = makeMember();
+      list.push(m);
+      saveState();
+      renderMembersPanel();
+      rerenderPlanKeepingInputs();
+      renderHistoryCards();
+      const rows = document.querySelectorAll('#members-editor [data-member-id] input');
+      if (rows.length) rows[rows.length - 1].focus();
+    }
+
+    function removeMember(scope, memberId) {
+      const list = memberList(scope);
+      if (!list) return;
+      const idx = list.findIndex(m => m.id === memberId);
+      if (idx < 0) return;
+      if (list[idx].name && !confirm(`「${list[idx].name}」を外しますか？`)) return;
+      list.splice(idx, 1);
+      saveState();
+      renderMembersPanel();
+      rerenderPlanKeepingInputs();
+      renderHistoryCards();
+    }
+
+    function updateMemberField(el) {
+      const row = el.closest('[data-member-id]');
+      const list = row && memberList(row.dataset.scope);
+      const m = list && list.find(x => x.id === row.dataset.memberId);
+      if (!m) return;
+      if (el.dataset.memberField === 'name') {
+        m.name = str(el.value, 30);
+        syncMemberName(m.id, m.name);
+      }
+      scheduleMemberSave();
+      scheduleNameRender('global');
+    }
+
+    // 右の「変更（左の欄へ）」：旅の仲間の欄へ移動して入力できるようにする
+    function gotoMembers() {
+      const panel = document.getElementById('members-panel');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      panel.classList.add('ring-4', 'ring-classic-gold');
+      setTimeout(() => panel.classList.remove('ring-4', 'ring-classic-gold'), 1600);
+      const first = panel.querySelector('input');
+      if (first) first.focus({ preventScroll: true });
+    }
+
+    // 右のプランを描き直す。書きかけの入力（ひとことメモ・予定の編集欄・名前の変更欄など）は消さずに引き継ぐ
+    function rerenderPlanKeepingInputs() {
+      const box = document.getElementById('plan-container');
+      const keyOf = el => {
+        const form = el.closest('[data-step-form]');
+        if (form) return `step:${form.dataset.stepId || 'new' + form.dataset.dayIndex}:${el.name}`;
+        const row = el.closest('[data-member-id]');
+        if (row) return `member:${row.dataset.memberId}:${el.dataset.memberField}`;
+        const photo = el.closest('[data-photo-id]');
+        if (photo) return `photo:${photo.dataset.photoId}`;
+        return el.id ? `id:${el.id}` : null;
+      };
+      const saved = new Map();
+      box.querySelectorAll('input:not([type=file]), textarea, select').forEach(el => {
+        const k = keyOf(el);
+        if (k) saved.set(k, el.value);
+      });
+      const active = document.activeElement && box.contains(document.activeElement) ? keyOf(document.activeElement) : null;
+      renderCurrentPlan(currentPlan);
+      box.querySelectorAll('input:not([type=file]), textarea, select').forEach(el => {
+        const k = keyOf(el);
+        if (!k || !saved.has(k)) return;
+        // 選択肢の場合は、その値が今も選べるときだけ戻す
+        if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === saved.get(k))) return;
+        el.value = saved.get(k);
+        if (k === active) el.focus();
+      });
+    }
+
+    // 同じ人（同じID）の名前を、旅の仲間の欄とすべてのプランでそろえる
+    function syncMemberName(memberId, name) {
+      members.forEach(x => { if (x.id === memberId) x.name = name; });
+      historyPlans.forEach(p => p.makers.forEach(x => { if (x.id === memberId) x.name = name; }));
+    }
+
+    // 入力中の欄は描き直さず、ほかの場所だけ少し待ってから描き直す（入力が途切れないように）
+    let nameRenderTimer = null;
+    function scheduleNameRender(scope) {
+      clearTimeout(nameRenderTimer);
+      nameRenderTimer = setTimeout(() => {
+        if (scope === 'global') rerenderPlanKeepingInputs();
+        else renderMembersPanel();
+        renderHistoryCards();
+      }, 300);
+    }
+
+    // --- ひとことメモ ---
+    function addComment() {
+      const plan = currentPlan;
+      const textEl = document.getElementById('comment-text');
+      const byEl = document.getElementById('comment-by');
+      if (!plan || !textEl) return;
+      const text = textEl.value.trim();
+      if (!text) { showToast('ひとことを入れてください', '⚠'); textEl.focus(); return; }
+      plan.comments.push({ id: newId('c'), by: str(byEl.value, 90) || 'both', text: str(text, 1000), at: new Date().toISOString() });
+      commit(plan);
+      playChime('bell');
+      showToast('書きこみました');
+    }
+
+    function deleteComment(commentId) {
+      const plan = currentPlan;
+      if (!plan) return;
+      if (!confirm('この書き込みを消しますか？')) return;
+      plan.comments = plan.comments.filter(c => c.id !== commentId);
+      commit(plan);
+    }
+
+    /* ====================================================================
+       9. プランの見比べ（横並びの表）
+       ==================================================================== */
+    function compareSelectedPlans() {
+      if (selectedForCompare.size < 2) {
+        // 2件えらばれていない場合は、新しい2件を自動でえらぶ
+        if (historyPlans.length >= 2) {
+          selectedForCompare.clear();
+          selectedForCompare.add(historyPlans[0].id);
+          selectedForCompare.add(historyPlans[1].id);
+          updateCompareUI();
+          renderHistoryCards();
+        } else {
+          showToast("見比べるには、プランを2つ以上つくってください", "ℹ️");
+          return;
+        }
+      }
+      renderCompareTable();
+      document.getElementById('compare-modal').classList.remove('hidden');
+      document.getElementById('compare-modal').classList.add('flex');
+      playChime('bell');
+    }
+
+    // 見比べで評価する人：旅の仲間（全プラン共通）
+    function comparePeople() {
+      return members.slice(); // 旅の仲間は全プラン共通
+    }
+
+    function wantValues(plan, people) {
+      return people.map(m => (plan.evaluations[m.id] || {}).want || 0).filter(v => v > 0);
+    }
+    function avgWant(plan, people) {
+      const vals = wantValues(plan, people);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    }
+
+    function starText(v) {
+      if (v === null) return '<span class="text-gray-400">まだ</span>';
+      const full = Math.round(v);
+      return `<span class="text-classic-gold tracking-tight" aria-hidden="true">${'★'.repeat(full)}${'☆'.repeat(5 - full)}</span> <span class="font-bold">${v.toFixed(1)}</span>`;
+    }
+
+    function renderRatingRows(plans, people) {
+      const cols = plans.length + 1;
+      if (!people.length) {
+        return `<tr><td colspan="${cols}" class="p-3 border border-gray-300 text-sm text-gray-600">左上の「旅の仲間」に名前を入れると、ここで行きたい度を記録できます。</td></tr>`;
+      }
+      const personRows = people.map((m, i) => `
+        <tr>
+          <th scope="row" class="p-3 border border-gray-300 text-left align-top bg-white">
+            <span class="inline-block text-sm font-bold px-2.5 py-1 rounded-lg border ${memberTone(people, m).badge} leading-snug">${esc(memberName(m, i))}</span>
+          </th>
+          ${plans.map(p => {
+            const ev = p.evaluations[m.id] || { want: 0, good: '' };
+            return `
+              <td class="p-3 border border-gray-300 align-top" data-plan-id="${esc(p.id)}" data-member-id="${esc(m.id)}">
+                <div class="flex items-center gap-0.5 mb-1.5" role="group" aria-label="${esc(memberName(m, i))}の行きたい度">
+                  <span class="text-xs text-gray-600 mr-1">行きたい度</span>
+                  ${[1, 2, 3, 4, 5].map(v => `
+                    <button type="button" data-action="rate" data-value="${v}" aria-label="${v}つ星" aria-pressed="${ev.want === v}"
+                      class="text-2xl leading-none px-0.5 ${v <= ev.want ? 'text-classic-gold' : 'text-gray-300'} hover:text-classic-goldHover">★</button>`).join('')}
+                </div>
+                <label class="block text-xs text-gray-600">良いと思った点
+                  <textarea data-eval-good rows="2" maxlength="300" placeholder="例：駅から近い／昔の写真と同じ景色が見られる"
+                    class="w-full mt-0.5 p-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-1 focus:ring-classic-gold">${esc(ev.good)}</textarea>
+                </label>
+              </td>`;
+          }).join('')}
+        </tr>`).join('');
+
+      // 2人以上のときだけ、平均と「意見が分かれている」目印を出す
+      const avgRow = people.length < 2 ? '' : `
+        <tr class="bg-[#FAF7F0]">
+          <th scope="row" class="p-3 border border-gray-300 text-left align-top font-bold text-classic-navy">みんなの<br>行きたい度</th>
+          ${plans.map(p => {
+            const vals = wantValues(p, people);
+            const split = vals.length >= 2 && Math.max(...vals) - Math.min(...vals) >= 2;
+            return `
+              <td class="p-3 border border-gray-300 align-top text-sm">
+                <div>平均 ${starText(avgWant(p, people))}</div>
+                ${split ? '<p class="mt-1.5 text-xs font-bold text-classic-burgundy">💬 意見が分かれています。お互いの理由を聞いてみましょう</p>' : ''}
+              </td>`;
+          }).join('')}
+        </tr>`;
+
+      return `
+        <tr><th colspan="${cols}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">行きたい度${people.length >= 2 ? '（一人ずつ）' : ''}</th></tr>
+        ${personRows}
+        ${avgRow}
+        <tr><th colspan="${cols}" class="p-2 border border-gray-300 bg-classic-navy text-white text-left font-serif">プランの中身</th></tr>`;
+    }
+
+    function rate(planId, memberId, value) {
+      const plan = findPlan(planId);
+      if (!plan) return;
+      const ev = plan.evaluations[memberId] || { want: 0, good: '' };
+      ev.want = ev.want === value ? 0 : value; // 同じ星をもう一度押すと取り消し
+      plan.evaluations[memberId] = ev;
+      touch(plan);
+      saveState();
+      const box = document.getElementById('compare-modal-content');
+      const top = box.scrollTop, left = box.scrollLeft;
+      renderCompareTable();
+      box.scrollTop = top; box.scrollLeft = left;
+      renderHistoryCards();
+    }
+
+    let evalSaveTimer = null;
+    function updateEvalGood(el) {
+      const cell = el.closest('[data-member-id]');
+      const plan = cell && findPlan(cell.dataset.planId);
+      if (!plan) return;
+      const id = cell.dataset.memberId;
+      const ev = plan.evaluations[id] || { want: 0, good: '' };
+      ev.good = str(el.value, 300);
+      plan.evaluations[id] = ev;
+      touch(plan);
+      clearTimeout(evalSaveTimer);
+      evalSaveTimer = setTimeout(saveState, 400);
+    }
+
+    function renderCompareTable() {
+      const plans = historyPlans.filter(p => selectedForCompare.has(p.id));
+      const people = comparePeople(plans);
+      const colWidth = plans.length === 2 ? 'w-1/2 min-w-[280px]' : 'w-1/3 min-w-[240px]';
+      const row = (label, cell) => `
+        <tr>
+          <th scope="row" class="p-3 border border-gray-300 font-bold bg-gray-50 text-gray-700 text-left align-top">${esc(label)}</th>
+          ${plans.map(p => `<td class="p-3 border border-gray-300 align-top">${cell(p, getHotel(p))}</td>`).join('')}
+        </tr>`;
+
+      document.getElementById('compare-modal-content').innerHTML = `
+        <div class="min-w-[650px]">
+          <table class="w-full border-collapse border border-gray-300 text-sm">
+            <thead>
+              <tr class="bg-[#FAF7F0]">
+                <th class="p-3 border border-gray-300 text-left w-40 min-w-[9rem] font-serif text-classic-navy bg-gray-100">見比べる点</th>
+                ${plans.map(p => `
+                  <th class="p-4 border border-gray-300 ${colWidth} text-left">
+                    <span class="text-xs px-2 py-0.5 rounded text-white ${esc(getHotel(p).bgBadge)} font-bold mb-1 inline-block">${esc(getHotel(p).name)}</span>
+                    <span class="block font-serif font-bold text-base text-classic-navy leading-snug">${esc(p.title)}</span>
+                  </th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${renderRatingRows(plans, people)}
+              ${row('条件', p => `
+                <span class="inline-block bg-classic-sand px-2 py-0.5 rounded text-xs font-bold text-classic-burgundy mb-1">${esc(LABELS.purpose[p.purpose])}</span>
+                <span class="block text-gray-700">${esc(LABELS.season[p.season])}・${esc(LABELS.nights[p.nights])}・${esc(LABELS.companion[p.companion])}・${esc(LABELS.pace[p.pace])}</span>`)}
+              ${row('場所・創業', (p, h) => `<span class="font-bold text-classic-navy">${esc(h.location)}</span><br><span class="text-xs text-gray-600">${esc(h.founded)}</span>`)}
+              ${row('建物の特長', (p, h) => `<span class="text-gray-700 leading-relaxed font-serif">${esc(h.feature)}</span>`)}
+              ${row('夕食・名物', (p, h) => `<strong class="text-classic-burgundy block">${esc(h.gourmet.dinner)}</strong><span class="text-xs text-gray-600 mt-1 block">名物：${esc(h.gourmet.specialty)}</span>`)}
+              ${row('旅程', p => p.days.map(d => `
+                <div class="mb-2">
+                  <span class="font-bold text-classic-navy">${esc(d.label)}</span>
+                  <ul class="list-disc list-inside space-y-0.5 text-gray-700">
+                    ${d.steps.filter(s => s.kind !== 'rest').map(s => {
+                      const w = whoInfo(p, s.by);
+                      return `<li>${esc(s.time)} ${esc(s.action)}${w.kind !== 'tool' ? ` <span class="text-xs font-bold px-1.5 rounded border ${w.tone.badge}">${esc(w.name)}</span>` : ''}</li>`;
+                    }).join('')}
+                  </ul>
+                </div>`).join(''))}
+              ${row('お土産', (p, h) => h.souvenirs.map(s => `<div class="mb-1">・${esc(s.name)}</div>`).join(''))}
+              ${row('だれの希望か', p => {
+                return voiceText(p, '<br>');
+              })}
+              ${row('ひとこと', p => {
+                const notes = [];
+                p.days.forEach(d => d.steps.forEach(s => { if (s.note) notes.push({ by: s.by, text: `${s.action}：${s.note}` }); }));
+                p.comments.forEach(c => notes.push({ by: c.by, text: c.text }));
+                if (!notes.length) return '<span class="text-gray-400">—</span>';
+                return notes.slice(0, 6).map(n => {
+                  const w = whoInfo(p, n.by);
+                  return `<div class="mb-1.5 border-l-4 pl-2 ${w.tone.bubble}"><strong class="text-xs">${esc(w.name)}</strong><br>${esc(n.text)}</div>`;
+                }).join('') + (notes.length > 6 ? `<span class="text-xs text-gray-500">ほか ${notes.length - 6} 件</span>` : '');
+              })}
+              <tr class="bg-gray-50">
+                <th scope="row" class="p-3 border border-gray-300 font-bold text-gray-700 text-left">このプランを</th>
+                ${plans.map(p => `
+                  <td class="p-3 border border-gray-300 text-center" data-plan-id="${esc(p.id)}">
+                    <button data-action="open-from-compare" class="w-full py-2 bg-classic-navy text-white rounded-lg text-sm font-serif font-bold hover:bg-gray-800 transition">くわしく見る</button>
+                  </td>`).join('')}
+              </tr>
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function closeCompareModal() {
+      document.getElementById('compare-modal').classList.add('hidden');
+      document.getElementById('compare-modal').classList.remove('flex');
+    }
+
+    function scrollToHistory() {
+      document.getElementById('history-section').scrollIntoView({ behavior: 'smooth' });
+      playChime('click');
+    }
+
+    /* ====================================================================
+       10. 旅程を文字でコピー
+       ==================================================================== */
+    function planToText(plan) {
+      const h = getHotel(plan);
+      let text = `【旅程】${plan.title}\n`;
+      text += `宿泊先：${h.name}（${h.location}）\n`;
+      text += `条件：${LABELS.season[plan.season]}／${LABELS.nights[plan.nights]}／${LABELS.companion[plan.companion]}／${LABELS.pace[plan.pace]}\n`;
+      if (members.length) text += `旅の仲間：${members.map((m, i) => memberName(m, i)).join('、')}\n`;
+      plan.days.forEach(d => {
+        text += `\n■ ${d.label}（${d.theme}）\n`;
+        d.steps.forEach(s => {
+          const w = whoInfo(plan, s.by);
+          text += `・${s.time} ${s.action}${w.kind !== 'tool' ? `［希望：${w.name}］` : ''}${s.detail ? ' - ' + s.detail : ''}\n`;
+          if (s.note) text += `　💬 ${w.name}：${s.note}\n`;
+        });
+      });
+      if (COMPANION_TIPS[plan.companion]) text += `\n■ ${LABELS.companion[plan.companion]}の旅のひとこと：${COMPANION_TIPS[plan.companion]}\n`;
+      text += `\n■ 夕食：${h.gourmet.dinner}\n`;
+      text += `■ おすすめのお土産：\n`;
+      h.souvenirs.forEach(s => { text += `・${s.name}\n`; });
+      const raters = comparePeople([plan]).filter(m => {
+        const ev = plan.evaluations[m.id];
+        return ev && (ev.want || ev.good);
+      });
+      if (raters.length) {
+        text += `\n■ みんなの評価\n`;
+        raters.forEach(m => {
+          const ev = plan.evaluations[m.id];
+          text += `・${memberName(m, members.findIndex(x => x.id === m.id))}：行きたい度 ${ev.want ? '★'.repeat(ev.want) : '－'}${ev.good ? '／良い点：' + ev.good : ''}\n`;
+        });
+      }
+      if (plan.comments.length) {
+        text += `\n■ ひとことメモ\n`;
+        plan.comments.forEach(c => { text += `・${whoInfo(plan, c.by).full}：${c.text}\n`; });
+      }
+      return text;
+    }
+
+    function copyPlanText() {
+      if (!currentPlan) return;
+      copyToClipboard(planToText(currentPlan)).then(ok => {
+        if (ok) {
+          showToast("旅程を文字でコピーしました。メールやチャットに貼り付けられます");
+          playChime('bell');
+        } else {
+          showToast("コピーできませんでした", "⚠");
+        }
+      });
+    }
+
+    // navigator.clipboard を優先し、使えない環境（file:// や古いブラウザ）だけ従来方式で代替する
+    async function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) { /* 下のフォールバックへ */ }
+      }
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+      document.body.removeChild(textarea);
+      return ok;
+    }
+
+    /* ====================================================================
+       11. 保存と引き継ぎ（localStorage への自動保存、JSON ファイルの書き出し・読み込み）
+       ==================================================================== */
+    const STORAGE_KEY = 'cht-planner-v2';
+    const DATA_FORMAT = 'classic-hotel-travel';
+    const DATA_VERSION = 2;
+    let storageWarned = false;
+
+    // 読み込んだデータは信用せず、型と長さをそろえてから使う
+    function str(v, max = 2000) {
+      return (typeof v === 'string' ? v : (typeof v === 'number' ? String(v) : '')).slice(0, max);
+    }
+    function oneOf(v, list, def) {
+      return list.includes(v) ? v : def;
+    }
+    function safeId(v, prefix) {
+      return (typeof v === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(v)) ? v : newId(prefix);
+    }
+    function isoOr(v, def) {
+      return (typeof v === 'string' && !isNaN(new Date(v))) ? v : def;
+    }
+
+    function normalizeStep(raw) {
+      const s = raw && typeof raw === 'object' ? raw : {};
+      const step = {
+        id: safeId(s.id, 's'),
+        time: str(s.time, 10),
+        action: str(s.action, 200),
+        detail: str(s.detail, 1000),
+        by: str(s.by, 90) || 'tool',
+        note: str(s.note, 1000)
+      };
+      if (s.kind === 'rest') step.kind = 'rest';
+      return step;
+    }
+
+    function normalizePlan(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const now = new Date().toISOString();
+      const hotelKey = HOTELS_DATA[raw.hotelKey] ? raw.hotelKey : null;
+      if (!hotelKey) return null;
+      const days = Array.isArray(raw.days) ? raw.days.slice(0, 7).map(d => ({
+        label: str(d && d.label, 30) || '日程',
+        theme: str(d && d.theme, 200),
+        steps: Array.isArray(d && d.steps) ? d.steps.slice(0, 40).map(normalizeStep) : []
+      })) : [];
+      const plan = {
+        id: safeId(raw.id, 'plan'),
+        createdAt: isoOr(raw.createdAt, now),
+        updatedAt: isoOr(raw.updatedAt, now),
+        hotelKey,
+        purpose: oneOf(raw.purpose, Object.keys(LABELS.purpose), 'architecture'),
+        season: oneOf(raw.season, Object.keys(LABELS.season), 'autumn'),
+        nights: oneOf(raw.nights, Object.keys(LABELS.nights), '1night'),
+        companion: oneOf(raw.companion, Object.keys(LABELS.companion), 'other'),
+        pace: oneOf(raw.pace, Object.keys(LABELS.pace), 'relaxed'),
+        title: str(raw.title, 200) || `${HOTELS_DATA[hotelKey].name}の旅`,
+        days: days.length ? days : buildDays(HOTELS_DATA[hotelKey], '1night', 'relaxed').days,
+        skipped: Array.isArray(raw.skipped) ? raw.skipped.slice(0, 40).map(s => ({
+          ...normalizeStep(s), dayIndex: Math.max(0, Math.min(6, Number(s && s.dayIndex) || 0))
+        })) : [],
+        makers: normalizeMembers(raw.makers),
+        comments: Array.isArray(raw.comments) ? raw.comments.slice(0, 200).map(c => ({
+          id: safeId(c && c.id, 'c'),
+          by: str(c && c.by, 90) || 'both',
+          text: str(c && c.text, 1000),
+          at: isoOr(c && c.at, now)
+        })).filter(c => c.text) : [],
+        evaluations: normalizeEvaluations(raw.evaluations),
+        photos: Array.isArray(raw.photos) ? raw.photos.slice(0, MAX_PHOTOS).filter(ph => ph && typeof ph.dataUrl === 'string' && ph.dataUrl.length < 4000000 && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(ph.dataUrl)).map(ph => ({
+          id: safeId(ph.id, 'ph'), dataUrl: ph.dataUrl, caption: str(ph.caption, 200), by: str(ph.by, 90) || 'both', at: isoOr(ph.at, now)
+        })) : []
+      };
+      // 旧版のメモ欄は「ひとことメモ」の1件目として引き継ぐ
+      const oldMemo = str(raw.memo, 1000).trim();
+      if (oldMemo && plan.comments.length === 0) {
+        plan.comments.push({ id: newId('c'), by: 'both', text: oldMemo, at: plan.updatedAt });
+      }
+      return plan;
+    }
+
+    function normalizeEvaluations(raw) {
+      const out = {};
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+      Object.keys(raw).slice(0, 20).forEach(k => {
+        if (!/^[A-Za-z0-9_-]{1,80}$/.test(k) || ['__proto__', 'constructor', 'prototype'].includes(k)) return;
+        const v = raw[k] || {};
+        out[k] = { want: Math.max(0, Math.min(5, Math.round(Number(v.want) || 0))), good: str(v.good, 300) };
+      });
+      return out;
+    }
+
+    function normalizeMembers(list) {
+      if (!Array.isArray(list)) return [];
+      return list.slice(0, 8).map(m => ({
+        id: safeId(m && m.id, 'm'),
+        name: str(m && m.name, 30)
+      }));
+    }
+
+    function buildSaveData() {
+      return {
+        format: DATA_FORMAT,
+        version: DATA_VERSION,
+        savedAt: new Date().toISOString(),
+        currentPlanId: currentPlan ? currentPlan.id : null,
+        members,
+        plans: historyPlans
+      };
+    }
+
+    function setSaveStatus(text, isError = false) {
+      const el = document.getElementById('save-status');
+      if (!el) return;
+      el.textContent = text;
+      el.classList.toggle('text-red-700', isError);
+      el.classList.toggle('font-bold', isError);
+      el.classList.toggle('text-gray-500', !isError);
+    }
+
+    // 変更のたびに呼ぶ。保存できなかった場合は利用者に知らせる
+    // 各プランに旅の仲間の控え（ID と名前）を残す。外した人の名前表示や、ファイルでの持ち運びに使う
+    function archiveMembers() {
+      historyPlans.forEach(p => {
+        members.forEach(m => {
+          const x = p.makers.find(k => k.id === m.id);
+          if (x) x.name = m.name;
+          else if (p.makers.length < 20) p.makers.push({ id: m.id, name: m.name });
+        });
+      });
+    }
+
+    function saveState() {
+      archiveMembers();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSaveData()));
+        const t = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+        setSaveStatus(`✓ この端末に保存しました（${t}）`);
+        return true;
+      } catch (e) {
+        setSaveStatus('⚠ この端末に保存できませんでした。「ファイルに書き出す」で控えを残してください。', true);
+        if (!storageWarned) {
+          storageWarned = true;
+          showToast('保存できませんでした。写真が多い場合は減らしてください', '⚠');
+        }
+        return false;
+      }
+    }
+
+    function touch(plan) {
+      if (plan) plan.updatedAt = new Date().toISOString();
+    }
+
+    // 変更を確定する共通処理：更新日時→保存→再描画
+    function commit(plan) {
+      touch(plan);
+      saveState();
+      renderAll();
+    }
+
+    function loadState() {
+      let raw = null;
+      try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
+      if (!raw) return null;
+      try {
+        const data = JSON.parse(raw);
+        return applyLoadedData(data, true);
+      } catch (e) {
+        setSaveStatus('⚠ 保存データを読み込めませんでした。', true);
+        return null;
+      }
+    }
+
+    // 読み込んだデータを画面の状態に反映する（replace=true なら置き換え、false なら統合）
+    function applyLoadedData(data, replace) {
+      if (!data || typeof data !== 'object' || !Array.isArray(data.plans)) throw new Error('形式が違います');
+      const plans = data.plans.map(normalizePlan).filter(Boolean);
+      const loadedMembers = normalizeMembers(data.members);
+      // メンバーは、置き換え時か、今のメンバーに名前が1つも入っていないときだけ取り込む
+      if (loadedMembers.length && (replace || !members.some(m => m.name))) members = loadedMembers;
+      if (replace) {
+        historyPlans = plans;
+        currentPlan = historyPlans.find(p => p.id === data.currentPlanId) || historyPlans[0] || null;
+        return { added: plans.length, replaced: 0 };
+      }
+      let added = 0, replaced = 0;
+      plans.forEach(p => {
+        const idx = historyPlans.findIndex(x => x.id === p.id);
+        if (idx >= 0) { historyPlans[idx] = p; replaced++; }
+        else { historyPlans.push(p); added++; }
+      });
+      historyPlans.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      if (currentPlan) currentPlan = findPlan(currentPlan.id) || historyPlans[0] || null;
+      else currentPlan = historyPlans[0] || null;
+      return { added, replaced };
+    }
+
+    function exportJSON() {
+      if (historyPlans.length === 0) {
+        showToast('書き出すプランがありません', 'ℹ️');
+        return;
+      }
+      const json = JSON.stringify(buildSaveData(), null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const d = new Date();
+      const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `旅のプラン-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      showToast(`プラン ${historyPlans.length} 件をファイルに書き出しました`);
+    }
+
+    function importJSON(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let data;
+        try {
+          data = JSON.parse(String(reader.result));
+          if (!data || !Array.isArray(data.plans)) throw new Error();
+        } catch (e) {
+          showToast('このファイルは読み込めませんでした（旅のプランのファイルを選んでください）', '⚠');
+          return;
+        }
+        const count = data.plans.length;
+        if (!confirm(`ファイルのプラン ${count} 件を、今の一覧に加えます。\n同じプランがすでにある場合は、ファイルの内容で置き換えます。よろしいですか？`)) return;
+        try {
+          const r = applyLoadedData(data, false);
+          saveState();
+          renderAll();
+          showToast(`読み込みました（追加 ${r.added} 件・置き換え ${r.replaced} 件）`);
+        } catch (e) {
+          showToast('読み込みに失敗しました', '⚠');
+        }
+      };
+      reader.onerror = () => showToast('ファイルを開けませんでした', '⚠');
+      reader.readAsText(file);
+    }
+
+    /* ====================================================================
+       12. 画面操作の受け付け（data-action によるイベント委譲）
+       ==================================================================== */
+    function planIdFrom(el) {
+      const holder = el.closest('[data-plan-id]');
+      return holder ? holder.dataset.planId : (currentPlan && currentPlan.id);
+    }
+
+    document.addEventListener('click', e => {
+      const el = e.target.closest('[data-action]');
+      if (!el || el.tagName === 'INPUT') return;
+      const action = el.dataset.action;
+      const planId = planIdFrom(el);
+      const stepEl = el.closest('[data-step-id]');
+      const stepId = stepEl ? stepEl.dataset.stepId : null;
+      const memberEl = el.closest('[data-member-id]');
+      switch (action) {
+        case 'view-plan': viewPlanDetail(planId); break;
+        case 'delete-plan': deletePlan(planId); break;
+        case 'copy-plan': copyPlanText(); break;
+        case 'print': editingStepId = null; editingTitle = false; renderCurrentPlan(currentPlan); window.print(); break;
+        case 'open-from-compare': closeCompareModal(); viewPlanDetail(planId); break;
+        case 'export-json': exportJSON(); break;
+        // 旅程の編集
+        case 'step-edit': editingStepId = stepId; renderCurrentPlan(currentPlan); focusStepForm(); break;
+        case 'step-add': editingStepId = `new:${el.dataset.dayIndex}`; renderCurrentPlan(currentPlan); focusStepForm(); break;
+        case 'step-cancel': editingStepId = null; renderCurrentPlan(currentPlan); break;
+        case 'step-save': saveStepForm(el.closest('[data-step-form]')); break;
+        case 'step-up': moveStep(stepId, -1); break;
+        case 'step-down': moveStep(stepId, 1); break;
+        case 'step-delete': deleteStep(stepId); break;
+        case 'skip-restore': restoreSkipped(el.closest('[data-skip-id]').dataset.skipId); break;
+        // タイトル・旅の仲間
+        case 'title-edit': editingTitle = true; renderCurrentPlan(currentPlan); document.getElementById('title-input').focus(); break;
+        case 'title-save': saveTitle(); break;
+        case 'title-cancel': editingTitle = false; renderCurrentPlan(currentPlan); break;
+        case 'goto-members': gotoMembers(); break;
+        // メンバー
+        case 'member-add': addMember(el.dataset.scope); break;
+        case 'member-remove': removeMember(memberEl.dataset.scope, memberEl.dataset.memberId); break;
+        // ひとことメモ
+        case 'comment-add': addComment(); break;
+        case 'comment-delete': deleteComment(el.closest('[data-comment-id]').dataset.commentId); break;
+        // 見比べ表での評価
+        case 'rate': rate(planId, memberEl.dataset.memberId, Number(el.dataset.value)); break;
+        // 写真
+        case 'photo-delete': deletePhoto(el.closest('[data-photo-id]').dataset.photoId); break;
+      }
+    });
+
+    function focusStepForm() {
+      const f = document.querySelector('[data-step-form] [name="action"]');
+      if (f) { f.focus(); f.closest('[data-step-form]').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    }
+
+    document.addEventListener('input', e => {
+      if (e.target.dataset && e.target.dataset.memberField) updateMemberField(e.target);
+      if (e.target.hasAttribute && e.target.hasAttribute('data-eval-good')) updateEvalGood(e.target);
+      if (e.target.hasAttribute && e.target.hasAttribute('data-photo-caption')) updatePhotoCaption(e.target);
+    });
+
+    document.addEventListener('change', e => {
+      const el = e.target;
+      if (el.dataset && el.dataset.memberField) updateMemberField(el);
+      if (el.dataset && el.dataset.action === 'toggle-compare') toggleCompareSelect(planIdFrom(el));
+      if (el.id === 'photo-file') addPhotos(el.files);
+      if (el.id === 'import-file') {
+        importJSON(el.files && el.files[0]);
+        el.value = ''; // 同じファイルをもう一度選べるようにする
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeCompareModal();
+      if (e.key === 'Enter' && e.target.id === 'title-input') { e.preventDefault(); saveTitle(); }
+    });
+
+    /* ====================================================================
+       13. 起動時の処理
+       ==================================================================== */
+    window.addEventListener('load', () => {
+      let savedFont = 'normal';
+      try {
+        savedFont = localStorage.getItem('cht-font-size') || 'normal';
+        isSoundOn = localStorage.getItem('cht-sound') === 'on';
+      } catch (e) { /* 無視 */ }
+      setFontSize(savedFont, true);
+      document.getElementById('sound-icon-on').classList.toggle('hidden', !isSoundOn);
+      document.getElementById('sound-icon-off').classList.toggle('hidden', isSoundOn);
+
+      // 保存データがあればそれを使う（すべて消した後の「0件」もそのまま尊重する）
+      if (loadState()) {
+        // 旅の仲間が保存されていない古いデータは、各プランの控えから名前のある人を集めて引き継ぐ
+        if (members.length === 0) {
+          const seen = new Map();
+          historyPlans.forEach(p => p.makers.forEach(m => { if (m.name && !seen.has(m.id)) seen.set(m.id, { id: m.id, name: m.name }); }));
+          members = seen.size ? [...seen.values()].slice(0, 8) : defaultMembers();
+        }
+        renderMembersPanel();
+        renderAll();
+        return;
+      }
+
+      members = defaultMembers();
+      renderMembersPanel();
+
+      // 初めて開いたときだけ、見比べをすぐ試せるよう見本のプランを2件用意する
+      const samples = [
+        { hotelKey: 'fujiya', purpose: 'architecture', season: 'autumn', nights: '1night', companion: 'couple', pace: 'relaxed' },
+        { hotelKey: 'nikko', purpose: 'nature', season: 'autumn', nights: '1night', companion: 'couple', pace: 'active' }
+      ];
+      historyPlans = samples.map(c => {
+        const p = createPlan(c);
+        p.title = `（見本）${p.title}`;
+        return p;
+      });
+      currentPlan = historyPlans[0];
+      saveState();
+      renderAll();
+    });
+  </script>
+</body>
+</html>
